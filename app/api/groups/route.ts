@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +10,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // 动态导入以避免构建时错误
+    const { prisma } = await import('@/lib/prisma')
 
     const group = await prisma.group.create({
       data: {
@@ -53,6 +55,9 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // 动态导入以避免构建时错误
+    const { prisma } = await import('@/lib/prisma')
 
     const groups = await prisma.group.findMany({
       where: { teacherId },

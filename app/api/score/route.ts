@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +10,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // 动态导入以避免构建时错误
+    const { prisma } = await import('@/lib/prisma')
 
     // 创建积分记录
     const scoreRecord = await prisma.scoreRecord.create({

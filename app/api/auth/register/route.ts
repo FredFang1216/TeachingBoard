@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createUser, findUserByEmail } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +17,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // 动态导入以避免构建时错误
+    const { createUser, findUserByEmail } = await import('@/lib/auth')
 
     // 检查用户是否已存在
     const existingUser = await findUserByEmail(email)

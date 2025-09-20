@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +11,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 动态导入以避免构建时错误
+    const { authenticateUser } = await import('@/lib/auth')
     const user = await authenticateUser(email, password)
 
     if (!user) {
