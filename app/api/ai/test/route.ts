@@ -116,7 +116,7 @@ async function callOpenAI(prompt: string, apiKey: string) {
   })
 
   if (!response.ok) {
-    const errorData = await response.json()
+    const errorData = await response.json().catch(() => ({}))
     throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || response.statusText}`)
   }
 
