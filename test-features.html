@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .test-button.danger {
+            background: #f44336;
+        }
+        .test-button.danger:hover {
+            background: #da190b;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f0f0f0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 AI课堂小工具 - 功能测试</h1>
+    
+    <div class="test-section">
+        <h2>1. 登录功能测试</h2>
+        <button class="test-button" onclick="testLogin('admin@example.com', 'admin123')">测试管理员登录</button>
+        <button class="test-button" onclick="testLogin('teacher@example.com', 'teacher123')">测试教师登录</button>
+        <button class="test-button" onclick="testLogin('admin@example.com', 'wrongpassword')">测试错误密码</button>
+        <div id="loginResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 数据重置功能测试</h2>
+        <button class="test-button danger" onclick="testResetData()">重置所有数据</button>
+        <div id="resetResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Excel导出功能测试</h2>
+        <button class="test-button" onclick="testExcelExport()">测试Excel导出</button>
+        <div id="exportResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. 页面访问测试</h2>
+        <button class="test-button" onclick="window.open('http://localhost:3001/login', '_blank')">打开登录页面</button>
+        <button class="test-button" onclick="window.open('http://localhost:3001/dashboard', '_blank')">打开仪表板</button>
+        <button class="test-button" onclick="window.open('http://localhost:3001/settings', '_blank')">打开设置页面</button>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001';
+
+        async function testLogin(email, password) {
+            const resultDiv = document.getElementById('loginResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '测试中...';
+            resultDiv.className = 'result';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.textContent = `✅ 登录成功！用户: ${data.user.name} (${data.user.role})`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = `❌ 登录失败: ${data.message}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ 网络错误: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testResetData() {
+            const resultDiv = document.getElementById('resetResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '重置中...';
+            resultDiv.className = 'result';
+
+            if (!confirm('确定要重置所有数据吗？')) {
+                resultDiv.textContent = '已取消重置';
+                resultDiv.className = 'result';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/data/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        ✅ 数据重置成功！<br>
+                        管理员账户: ${data.admin.email} / ${data.admin.password}<br>
+                        教师账户: ${data.teacher.email} / ${data.teacher.password}
+                    `;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = `❌ 重置失败: ${data.message}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ 网络错误: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        function testExcelExport() {
+            const resultDiv = document.getElementById('exportResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Excel导出功能需要在设置页面中测试';
+            resultDiv.className = 'result';
+        }
+    </script>
+</body>
+</html>

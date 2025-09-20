@@ -17,6 +17,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { Bar, Pie } from 'react-chartjs-2'
 import toast from 'react-hot-toast'
 import Navigation from '@/components/Navigation'
+import { useRouter } from 'next/navigation'
 
 // 注册Chart.js组件
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
@@ -37,11 +38,19 @@ interface Group {
 }
 
 export default function AnalyticsPage() {
+  const router = useRouter()
   const [groups, setGroups] = useState<Group[]>([])
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [aiReport, setAiReport] = useState('')
   const [generatingReport, setGeneratingReport] = useState(false)
   const [activeTab, setActiveTab] = useState<'charts' | 'ai-report'>('charts')
+
+  const handleLogout = () => {
+    localStorage.removeItem('user')
+    sessionStorage.clear()
+    toast.success('已成功退出登录')
+    router.push('/login')
+  }
 
   // 模拟数据加载
   useEffect(() => {
@@ -221,7 +230,7 @@ ${selectedGroup.students
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-blue-50">
       {/* 头部导航 */}
-      <Navigation />
+      <Navigation onLogout={handleLogout} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 小组选择 */}

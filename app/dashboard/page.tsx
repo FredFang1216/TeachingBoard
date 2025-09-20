@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Navigation from '@/components/Navigation'
+import { useRouter } from 'next/navigation'
 
 interface Student {
   id: string
@@ -41,6 +42,7 @@ interface Group {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [groups, setGroups] = useState<Group[]>([])
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [showAddStudent, setShowAddStudent] = useState(false)
@@ -50,6 +52,18 @@ export default function DashboardPage() {
   const [scoreReason, setScoreReason] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'score'>('score')
   const [loading, setLoading] = useState(true)
+
+  const handleLogout = () => {
+    // 清除本地存储的用户信息
+    localStorage.removeItem('user')
+    sessionStorage.clear()
+    
+    // 显示退出成功消息
+    toast.success('已成功退出登录')
+    
+    // 跳转到登录页面
+    router.push('/login')
+  }
 
   // 模拟数据加载
   useEffect(() => {
@@ -168,7 +182,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-blue-50">
       {/* 头部导航 */}
-      <Navigation />
+      <Navigation onLogout={handleLogout} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 小组选择 */}
