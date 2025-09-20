@@ -6,6 +6,62 @@ export async function POST(request: NextRequest) {
     const { prisma } = await import('@/lib/prisma')
     const bcrypt = require('bcryptjs')
 
+    // 首先创建表结构
+    try {
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          password TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'TEACHER',
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `
+      
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS groups (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          "teacherId" TEXT NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY ("teacherId") REFERENCES users(id) ON DELETE CASCADE
+        )
+      `
+      
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS students (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          height REAL,
+          weight REAL,
+          "heartRate" INTEGER,
+          "totalScore" INTEGER DEFAULT 0,
+          "groupId" TEXT NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY ("groupId") REFERENCES groups(id) ON DELETE CASCADE,
+          UNIQUE(name, "groupId")
+        )
+      `
+      
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS score_records (
+          id TEXT PRIMARY KEY,
+          "studentId" TEXT NOT NULL,
+          points INTEGER NOT NULL,
+          reason TEXT NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY ("studentId") REFERENCES students(id) ON DELETE CASCADE
+        )
+      `
+    } catch (tableError) {
+      console.log('表可能已存在，继续执行...', tableError)
+    }
+
     // 检查是否已有数据
     const existingUsers = await prisma.user.count()
     
