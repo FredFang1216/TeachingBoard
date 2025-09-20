@@ -31,7 +31,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Add student error:', error)
     return NextResponse.json(
-      { message: '服务器错误' },
+      { 
+        message: '添加学生失败', 
+        error: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     )
   }
@@ -66,7 +69,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Get students error:', error)
     return NextResponse.json(
-      { message: '服务器错误' },
+      { 
+        message: '获取学生失败', 
+        error: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     )
   }

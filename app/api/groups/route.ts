@@ -38,7 +38,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Create group error:', error)
     return NextResponse.json(
-      { message: '服务器错误' },
+      { 
+        message: '创建班级失败', 
+        error: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     )
   }
@@ -77,7 +80,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Get groups error:', error)
     return NextResponse.json(
-      { message: '服务器错误' },
+      { 
+        message: '获取班级失败', 
+        error: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     )
   }

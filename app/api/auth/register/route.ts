@@ -44,7 +44,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(
-      { message: '服务器错误' },
+      { 
+        message: '注册失败', 
+        error: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     )
   }
