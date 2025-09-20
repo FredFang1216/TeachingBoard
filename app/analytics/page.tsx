@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js'
 import { Bar, Pie } from 'react-chartjs-2'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import toast from 'react-hot-toast'
 import Navigation from '@/components/Navigation'
 import { useRouter } from 'next/navigation'
@@ -420,23 +422,37 @@ ${needsImprovement > 0 ?
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-xl font-bold text-gray-800">AI智能分析报告</h3>
-                  <button
-                    onClick={generateAIReport}
-                    disabled={generatingReport}
-                    className="btn-primary"
-                  >
-                    {generatingReport ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        生成中...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        生成报告
-                      </>
+                  <div className="flex space-x-3">
+                    {aiReport && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(aiReport)
+                          toast.success('报告已复制到剪贴板')
+                        }}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        复制报告
+                      </button>
                     )}
-                  </button>
+                    <button
+                      onClick={generateAIReport}
+                      disabled={generatingReport}
+                      className="btn-primary"
+                    >
+                      {generatingReport ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          生成中...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          生成报告
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {aiReport && (
@@ -445,10 +461,10 @@ ${needsImprovement > 0 ?
                     animate={{ opacity: 1, y: 0 }}
                     className="card"
                   >
-                    <div className="prose max-w-none">
-                      <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
+                    <div className="prose max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:text-gray-700 prose-ul:text-gray-700 prose-li:text-gray-700 prose-strong:text-gray-800 prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {aiReport}
-                      </pre>
+                      </ReactMarkdown>
                     </div>
                   </motion.div>
                 )}
