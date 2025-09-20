@@ -44,6 +44,12 @@ export default function LoginPage() {
 
       if (response.ok) {
         toast.success(isLogin ? '登录成功！' : '注册成功！')
+        
+        // 保存用户信息到localStorage
+        if (isLogin && data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user))
+        }
+        
         router.push('/dashboard')
       } else {
         toast.error(data.message || '操作失败')

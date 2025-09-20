@@ -52,6 +52,17 @@ export default function DashboardPage() {
   const [scoreReason, setScoreReason] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'score'>('score')
   const [loading, setLoading] = useState(true)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [showAddGroup, setShowAddGroup] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [newGroupDescription, setNewGroupDescription] = useState('')
+  const [showAddStudentForm, setShowAddStudentForm] = useState(false)
+  const [newStudent, setNewStudent] = useState({
+    name: '',
+    height: '',
+    weight: '',
+    heartRate: ''
+  })
 
   const handleLogout = () => {
     // 清除本地存储的用户信息
@@ -65,81 +76,41 @@ export default function DashboardPage() {
     router.push('/login')
   }
 
-  // 模拟数据加载
+  // 加载用户信息和数据
   useEffect(() => {
-    // 模拟从API加载数据
-    setTimeout(() => {
-      setGroups([
-        {
-          id: '1',
-          name: '三年级一班',
-          students: [
-            {
-              id: '1',
-              name: '小明',
-              height: 120,
-              weight: 25,
-              heartRate: 80,
-              totalScore: 150,
-              scoreRecords: []
-            },
-            {
-              id: '2',
-              name: '小红',
-              height: 118,
-              weight: 23,
-              heartRate: 85,
-              totalScore: 200,
-              scoreRecords: []
-            },
-            {
-              id: '3',
-              name: '小刚',
-              height: 125,
-              weight: 28,
-              heartRate: 75,
-              totalScore: 120,
-              scoreRecords: []
-            }
-          ]
+    const loadUserAndData = async () => {
+      try {
+        // 从localStorage获取用户信息
+        const userData = localStorage.getItem('user')
+        if (!userData) {
+          router.push('/login')
+          return
         }
-      ])
-      setSelectedGroup({
-        id: '1',
-        name: '三年级一班',
-        students: [
-          {
-            id: '1',
-            name: '小明',
-            height: 120,
-            weight: 25,
-            heartRate: 80,
-            totalScore: 150,
-            scoreRecords: []
-          },
-          {
-            id: '2',
-            name: '小红',
-            height: 118,
-            weight: 23,
-            heartRate: 85,
-            totalScore: 200,
-            scoreRecords: []
-          },
-          {
-            id: '3',
-            name: '小刚',
-            height: 125,
-            weight: 28,
-            heartRate: 75,
-            totalScore: 120,
-            scoreRecords: []
+        
+        const user = JSON.parse(userData)
+        setCurrentUser(user)
+        
+        // 加载班级数据
+        const groupsResponse = await fetch(`/api/groups?teacherId=${user.id}`)
+        if (groupsResponse.ok) {
+          const groupsData = await groupsResponse.json()
+          setGroups(groupsData.groups || [])
+          
+          // 如果有班级，选择第一个
+          if (groupsData.groups && groupsData.groups.length > 0) {
+            setSelectedGroup(groupsData.groups[0])
           }
-        ]
-      })
-      setLoading(false)
-    }, 1000)
-  }, [])
+        }
+      } catch (error) {
+        console.error('加载数据失败:', error)
+        toast.error('加载数据失败')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadUserAndData()
+  }, [router])
 
   const handleAddScore = (student: Student, points: number) => {
     setSelectedStudent(student)
@@ -154,11 +125,137 @@ export default function DashboardPage() {
       return
     }
 
-    // 这里应该调用API更新分数
-    toast.success(`已为 ${selectedStudent.name} ${scorePoints > 0 ? '加分' : '减分'} ${Math.abs(scorePoints)} 分`)
+    try {
+      const response = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: selectedStudent.id,
+          points: scorePoints,
+          reason: scoreReason
+        })
+      })
+
+      if (response.ok) {
+        toast.success(`已为 ${selectedStudent.name} ${scorePoints > 0 ? '加分' : '减分'} ${Math.abs(scorePoints)} 分`)
+        // 重新加载数据
+        if (currentUser) {
+          const groupsResponse = await fetch(`/api/groups?teacherId=${currentUser.id}`)
+          if (groupsResponse.ok) {
+            const groupsData = await groupsResponse.json()
+            setGroups(groupsData.groups || [])
+            if (selectedGroup) {
+              const updatedGroup = groupsData.groups.find((g: Group) => g.id === selectedGroup.id)
+              if (updatedGroup) {
+                setSelectedGroup(updatedGroup)
+              }
+            }
+          }
+        }
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.message || '更新分数失败')
+      }
+    } catch (error) {
+      toast.error('网络错误，请重试')
+    }
+
     setShowScoreModal(false)
     setSelectedStudent(null)
     setScoreReason('')
+  }
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) {
+      toast.error('请输入班级名称')
+      return
+    }
+
+    if (!currentUser) {
+      toast.error('用户信息错误')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newGroupName,
+          description: newGroupDescription,
+          teacherId: currentUser.id
+        })
+      })
+
+      if (response.ok) {
+        toast.success('班级创建成功')
+        setNewGroupName('')
+        setNewGroupDescription('')
+        setShowAddGroup(false)
+        
+        // 重新加载班级数据
+        const groupsResponse = await fetch(`/api/groups?teacherId=${currentUser.id}`)
+        if (groupsResponse.ok) {
+          const groupsData = await groupsResponse.json()
+          setGroups(groupsData.groups || [])
+        }
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.message || '创建班级失败')
+      }
+    } catch (error) {
+      toast.error('网络错误，请重试')
+    }
+  }
+
+  const handleAddStudent = async () => {
+    if (!newStudent.name.trim()) {
+      toast.error('请输入学生姓名')
+      return
+    }
+
+    if (!selectedGroup) {
+      toast.error('请先选择班级')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newStudent.name,
+          height: newStudent.height ? parseFloat(newStudent.height) : null,
+          weight: newStudent.weight ? parseFloat(newStudent.weight) : null,
+          heartRate: newStudent.heartRate ? parseInt(newStudent.heartRate) : null,
+          groupId: selectedGroup.id
+        })
+      })
+
+      if (response.ok) {
+        toast.success('学生添加成功')
+        setNewStudent({ name: '', height: '', weight: '', heartRate: '' })
+        setShowAddStudentForm(false)
+        
+        // 重新加载班级数据
+        if (currentUser) {
+          const groupsResponse = await fetch(`/api/groups?teacherId=${currentUser.id}`)
+          if (groupsResponse.ok) {
+            const groupsData = await groupsResponse.json()
+            setGroups(groupsData.groups || [])
+            const updatedGroup = groupsData.groups.find((g: Group) => g.id === selectedGroup.id)
+            if (updatedGroup) {
+              setSelectedGroup(updatedGroup)
+            }
+          }
+        }
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.message || '添加学生失败')
+      }
+    } catch (error) {
+      toast.error('网络错误，请重试')
+    }
   }
 
   const sortedStudents = selectedGroup?.students.sort((a, b) => {
@@ -205,7 +302,10 @@ export default function DashboardPage() {
                 </span>
               </button>
             ))}
-            <button className="px-6 py-3 rounded-xl font-semibold bg-white text-gray-500 border-2 border-dashed border-gray-300 hover:border-pink-300 hover:text-pink-600 transition-all duration-200">
+            <button 
+              onClick={() => setShowAddGroup(true)}
+              className="px-6 py-3 rounded-xl font-semibold bg-white text-gray-500 border-2 border-dashed border-gray-300 hover:border-pink-300 hover:text-pink-600 transition-all duration-200"
+            >
               <Plus className="w-4 h-4 mr-2 inline" />
               新建班级
             </button>
@@ -233,7 +333,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <button
-                onClick={() => setShowAddStudent(true)}
+                onClick={() => setShowAddStudentForm(true)}
                 className="btn-primary"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
@@ -374,6 +474,145 @@ export default function DashboardPage() {
                   className="btn-primary"
                 >
                   确定
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 创建班级模态框 */}
+        {showAddGroup && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-md mx-4"
+            >
+              <h3 className="text-xl font-bold text-gray-800 mb-4">创建新班级</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    班级名称 *
+                  </label>
+                  <input
+                    type="text"
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                    className="input-field"
+                    placeholder="请输入班级名称"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    班级描述
+                  </label>
+                  <textarea
+                    value={newGroupDescription}
+                    onChange={(e) => setNewGroupDescription(e.target.value)}
+                    className="input-field h-20 resize-none"
+                    placeholder="请输入班级描述（可选）"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setShowAddGroup(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleCreateGroup}
+                  className="btn-primary"
+                >
+                  创建班级
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 添加学生模态框 */}
+        {showAddStudentForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-md mx-4"
+            >
+              <h3 className="text-xl font-bold text-gray-800 mb-4">添加新学生</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    学生姓名 *
+                  </label>
+                  <input
+                    type="text"
+                    value={newStudent.name}
+                    onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
+                    className="input-field"
+                    placeholder="请输入学生姓名"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      身高 (cm)
+                    </label>
+                    <input
+                      type="number"
+                      value={newStudent.height}
+                      onChange={(e) => setNewStudent({...newStudent, height: e.target.value})}
+                      className="input-field"
+                      placeholder="120"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      体重 (kg)
+                    </label>
+                    <input
+                      type="number"
+                      value={newStudent.weight}
+                      onChange={(e) => setNewStudent({...newStudent, weight: e.target.value})}
+                      className="input-field"
+                      placeholder="25"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    心率 (bpm)
+                  </label>
+                  <input
+                    type="number"
+                    value={newStudent.heartRate}
+                    onChange={(e) => setNewStudent({...newStudent, heartRate: e.target.value})}
+                    className="input-field"
+                    placeholder="80"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setShowAddStudentForm(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleAddStudent}
+                  className="btn-primary"
+                >
+                  添加学生
                 </button>
               </div>
             </motion.div>
