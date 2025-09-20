@@ -3,13 +3,34 @@
 export default function TestFeaturesPage() {
   const testCreateGroup = async () => {
     try {
+      // 首先获取一个真实的教师ID
+      const usersResponse = await fetch('/api/users')
+      const usersData = await usersResponse.json()
+      
+      let teacherId = null
+      if (usersData.users && usersData.users.length > 0) {
+        // 查找教师用户
+        const teacher = usersData.users.find((user: any) => user.role === 'TEACHER')
+        if (teacher) {
+          teacherId = teacher.id
+        } else {
+          // 如果没有教师，使用第一个用户
+          teacherId = usersData.users[0].id
+        }
+      }
+      
+      if (!teacherId) {
+        alert('没有找到可用的教师用户，请先初始化数据库')
+        return
+      }
+      
       const response = await fetch('/api/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: '测试班级',
           description: '这是一个测试班级',
-          teacherId: 'test-teacher-id'
+          teacherId: teacherId
         })
       })
       const data = await response.json()
@@ -21,6 +42,37 @@ export default function TestFeaturesPage() {
 
   const testCreateStudent = async () => {
     try {
+      // 首先获取一个真实的班级ID
+      const usersResponse = await fetch('/api/users')
+      const usersData = await usersResponse.json()
+      
+      let teacherId = null
+      if (usersData.users && usersData.users.length > 0) {
+        // 查找教师用户
+        const teacher = usersData.users.find((user: any) => user.role === 'TEACHER')
+        if (teacher) {
+          teacherId = teacher.id
+        } else {
+          // 如果没有教师，使用第一个用户
+          teacherId = usersData.users[0].id
+        }
+      }
+      
+      if (!teacherId) {
+        alert('没有找到可用的教师用户，请先初始化数据库')
+        return
+      }
+      
+      // 获取该教师的班级
+      const groupsResponse = await fetch(`/api/groups?teacherId=${teacherId}`)
+      const groupsData = await groupsResponse.json()
+      
+      if (!groupsData.groups || groupsData.groups.length === 0) {
+        alert('没有找到班级，请先创建班级')
+        return
+      }
+      
+      const groupId = groupsData.groups[0].id
       const response = await fetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,7 +81,7 @@ export default function TestFeaturesPage() {
           height: 120,
           weight: 25,
           heartRate: 80,
-          groupId: 'demo-group-1'
+          groupId: groupId
         })
       })
       const data = await response.json()
@@ -59,7 +111,28 @@ export default function TestFeaturesPage() {
 
   const testGetGroups = async () => {
     try {
-      const response = await fetch('/api/groups?teacherId=test-teacher-id')
+      // 首先获取一个真实的教师ID
+      const usersResponse = await fetch('/api/users')
+      const usersData = await usersResponse.json()
+      
+      let teacherId = null
+      if (usersData.users && usersData.users.length > 0) {
+        // 查找教师用户
+        const teacher = usersData.users.find((user: any) => user.role === 'TEACHER')
+        if (teacher) {
+          teacherId = teacher.id
+        } else {
+          // 如果没有教师，使用第一个用户
+          teacherId = usersData.users[0].id
+        }
+      }
+      
+      if (!teacherId) {
+        alert('没有找到可用的教师用户，请先初始化数据库')
+        return
+      }
+      
+      const response = await fetch(`/api/groups?teacherId=${teacherId}`)
       const data = await response.json()
       alert(JSON.stringify(data, null, 2))
     } catch (error) {
@@ -69,7 +142,38 @@ export default function TestFeaturesPage() {
 
   const testGetStudents = async () => {
     try {
-      const response = await fetch('/api/students?groupId=demo-group-1')
+      // 首先获取一个真实的班级ID
+      const usersResponse = await fetch('/api/users')
+      const usersData = await usersResponse.json()
+      
+      let teacherId = null
+      if (usersData.users && usersData.users.length > 0) {
+        // 查找教师用户
+        const teacher = usersData.users.find((user: any) => user.role === 'TEACHER')
+        if (teacher) {
+          teacherId = teacher.id
+        } else {
+          // 如果没有教师，使用第一个用户
+          teacherId = usersData.users[0].id
+        }
+      }
+      
+      if (!teacherId) {
+        alert('没有找到可用的教师用户，请先初始化数据库')
+        return
+      }
+      
+      // 获取该教师的班级
+      const groupsResponse = await fetch(`/api/groups?teacherId=${teacherId}`)
+      const groupsData = await groupsResponse.json()
+      
+      if (!groupsData.groups || groupsData.groups.length === 0) {
+        alert('没有找到班级，请先创建班级')
+        return
+      }
+      
+      const groupId = groupsData.groups[0].id
+      const response = await fetch(`/api/students?groupId=${groupId}`)
       const data = await response.json()
       alert(JSON.stringify(data, null, 2))
     } catch (error) {
