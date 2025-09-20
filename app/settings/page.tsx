@@ -16,6 +16,7 @@ import Navigation from '@/components/Navigation'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { exportStudentsToExcel, importStudentsFromExcel, exportScoreRecordsToExcel } from '@/lib/excel'
+import * as XLSX from 'xlsx'
 
 export default function SettingsPage() {
   const router = useRouter()

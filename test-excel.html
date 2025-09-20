@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f0f0f0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>🧪 Excel功能测试</h1>
+    
+    <div class="test-section">
+        <h2>1. 测试Excel导出功能</h2>
+        <button class="test-button" onclick="testExcelExport()">测试导出Excel</button>
+        <div id="exportResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 测试Excel导入功能</h2>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="margin: 10px 0;">
+        <button class="test-button" onclick="testExcelImport()">测试导入Excel</button>
+        <div id="importResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 测试模板下载</h2>
+        <button class="test-button" onclick="downloadTemplate()">下载Excel模板</button>
+        <div id="templateResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function testExcelExport() {
+            const resultDiv = document.getElementById('exportResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '测试中...';
+            resultDiv.className = 'result';
+
+            try {
+                // 创建测试数据
+                const testData = [
+                    ['姓名', '身高(cm)', '体重(kg)', '心率(bpm)', '总积分', '积分记录'],
+                    ['小明', 120, 25, 80, 150, '课堂表现优秀'],
+                    ['小红', 118, 23, 85, 200, '帮助同学'],
+                    ['小刚', 125, 28, 75, 120, '回答问题积极']
+                ];
+
+                // 创建工作簿
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.aoa_to_sheet(testData);
+                XLSX.utils.book_append_sheet(workbook, worksheet, '学生数据');
+
+                // 生成Excel文件
+                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+                // 下载文件
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(data);
+                link.download = '测试学生数据.xlsx';
+                link.click();
+
+                resultDiv.textContent = '✅ Excel导出测试成功！文件已下载';
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ Excel导出测试失败: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        function testExcelImport() {
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('importResult');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = '请先选择一个Excel文件';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '解析中...';
+            resultDiv.className = 'result';
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    resultDiv.innerHTML = `
+                        ✅ Excel导入测试成功！<br>
+                        解析到 ${jsonData.length} 行数据<br>
+                        第一行: ${JSON.stringify(jsonData[0])}
+                    `;
+                    resultDiv.className = 'result success';
+                } catch (error) {
+                    resultDiv.textContent = `❌ Excel导入测试失败: ${error.message}`;
+                    resultDiv.className = 'result error';
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function downloadTemplate() {
+            const resultDiv = document.getElementById('templateResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '创建模板中...';
+            resultDiv.className = 'result';
+
+            try {
+                // 创建模板数据
+                const templateData = [
+                    ['姓名', '身高(cm)', '体重(kg)', '心率(bpm)', '总积分', '积分记录'],
+                    ['示例学生1', 120, 25, 80, 100, ''],
+                    ['示例学生2', 118, 23, 85, 150, '']
+                ];
+
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+                XLSX.utils.book_append_sheet(workbook, worksheet, '学生数据模板');
+
+                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(data);
+                link.download = '学生数据导入模板.xlsx';
+                link.click();
+
+                resultDiv.textContent = '✅ 模板下载成功！';
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ 模板下载失败: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>
