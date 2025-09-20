@@ -94,6 +94,30 @@ export default function TestAIPage() {
     }
   }
 
+  const debugApiKey = async () => {
+    const apiKey = prompt('请输入你的OpenAI API密钥进行详细调试:')
+    if (!apiKey) return
+    
+    setLoading(true)
+    try {
+      const response = await fetch('/api/ai/debug-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey: apiKey
+        })
+      })
+      const data = await response.json()
+      setTestResult(data)
+    } catch (error) {
+      setTestResult({
+        error: 'API密钥调试失败: ' + (error instanceof Error ? error.message : String(error))
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h1>🤖 AI API 测试页面</h1>
@@ -166,6 +190,23 @@ export default function TestAIPage() {
           }}
         >
           {loading ? '验证中...' : '验证API密钥'}
+        </button>
+        
+        <button 
+          onClick={debugApiKey}
+          disabled={loading}
+          style={{ 
+            padding: '10px 20px', 
+            margin: '10px',
+            backgroundColor: '#6f42c1',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.6 : 1
+          }}
+        >
+          {loading ? '调试中...' : '详细调试API密钥'}
         </button>
       </div>
       
