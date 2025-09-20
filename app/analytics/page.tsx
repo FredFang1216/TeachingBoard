@@ -44,6 +44,8 @@ export default function AnalyticsPage() {
   const [aiReport, setAiReport] = useState('')
   const [generatingReport, setGeneratingReport] = useState(false)
   const [activeTab, setActiveTab] = useState<'charts' | 'ai-report'>('charts')
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   const handleLogout = () => {
     localStorage.removeItem('user')
@@ -52,35 +54,41 @@ export default function AnalyticsPage() {
     router.push('/login')
   }
 
-  // 模拟数据加载
+  // 加载用户信息和数据
   useEffect(() => {
-    setTimeout(() => {
-      setGroups([
-        {
-          id: '1',
-          name: '三年级一班',
-          students: [
-            { id: '1', name: '小明', totalScore: 150, height: 120, weight: 25, heartRate: 80 },
-            { id: '2', name: '小红', totalScore: 200, height: 118, weight: 23, heartRate: 85 },
-            { id: '3', name: '小刚', totalScore: 120, height: 125, weight: 28, heartRate: 75 },
-            { id: '4', name: '小丽', totalScore: 180, height: 115, weight: 22, heartRate: 90 },
-            { id: '5', name: '小强', totalScore: 95, height: 130, weight: 30, heartRate: 70 }
-          ]
+    const loadUserAndData = async () => {
+      try {
+        // 从localStorage获取用户信息
+        const userData = localStorage.getItem('user')
+        if (!userData) {
+          router.push('/login')
+          return
         }
-      ])
-      setSelectedGroup({
-        id: '1',
-        name: '三年级一班',
-        students: [
-          { id: '1', name: '小明', totalScore: 150, height: 120, weight: 25, heartRate: 80 },
-          { id: '2', name: '小红', totalScore: 200, height: 118, weight: 23, heartRate: 85 },
-          { id: '3', name: '小刚', totalScore: 120, height: 125, weight: 28, heartRate: 75 },
-          { id: '4', name: '小丽', totalScore: 180, height: 115, weight: 22, heartRate: 90 },
-          { id: '5', name: '小强', totalScore: 95, height: 130, weight: 30, heartRate: 70 }
-        ]
-      })
-    }, 1000)
-  }, [])
+        
+        const user = JSON.parse(userData)
+        setCurrentUser(user)
+        
+        // 加载班级数据
+        const groupsResponse = await fetch(`/api/groups?teacherId=${user.id}`)
+        if (groupsResponse.ok) {
+          const groupsData = await groupsResponse.json()
+          setGroups(groupsData.groups || [])
+          
+          // 如果有班级，选择第一个
+          if (groupsData.groups && groupsData.groups.length > 0) {
+            setSelectedGroup(groupsData.groups[0])
+          }
+        }
+      } catch (error) {
+        console.error('加载数据失败:', error)
+        toast.error('加载数据失败')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadUserAndData()
+  }, [router])
 
   const generateAIReport = async () => {
     if (!selectedGroup) return
@@ -88,37 +96,72 @@ export default function AnalyticsPage() {
     setGeneratingReport(true)
     
     try {
-      // 模拟AI报告生成
+      // 模拟AI报告生成（实际项目中可以调用真实的AI API）
       await new Promise(resolve => setTimeout(resolve, 3000))
+      
+      const students = selectedGroup.students
+      const totalStudents = students.length
+      const totalScore = students.reduce((sum, s) => sum + s.totalScore, 0)
+      const averageScore = Math.round(totalScore / totalStudents)
+      const maxScore = Math.max(...students.map(s => s.totalScore))
+      const minScore = Math.min(...students.map(s => s.totalScore))
+      
+      // 计算表现等级分布
+      const excellent = students.filter(s => s.totalScore >= 180).length
+      const good = students.filter(s => s.totalScore >= 120 && s.totalScore < 180).length
+      const average = students.filter(s => s.totalScore >= 80 && s.totalScore < 120).length
+      const needsImprovement = students.filter(s => s.totalScore < 80).length
+      
+      // 计算身体指标统计
+      const heights = students.filter(s => s.height).map(s => s.height!)
+      const weights = students.filter(s => s.weight).map(s => s.weight!)
+      const heartRates = students.filter(s => s.heartRate).map(s => s.heartRate!)
+      
+      const avgHeight = heights.length > 0 ? Math.round(heights.reduce((sum, h) => sum + h, 0) / heights.length) : 0
+      const avgWeight = weights.length > 0 ? Math.round(weights.reduce((sum, w) => sum + w, 0) / weights.length) : 0
+      const avgHeartRate = heartRates.length > 0 ? Math.round(heartRates.reduce((sum, h) => sum + h, 0) / heartRates.length) : 0
       
       const report = `
 # ${selectedGroup.name} 班级分析报告
 
 ## 📊 整体表现概览
-- **班级总人数**: ${selectedGroup.students.length}人
-- **平均积分**: ${Math.round(selectedGroup.students.reduce((sum, s) => sum + s.totalScore, 0) / selectedGroup.students.length)}分
-- **最高积分**: ${Math.max(...selectedGroup.students.map(s => s.totalScore))}分
-- **最低积分**: ${Math.min(...selectedGroup.students.map(s => s.totalScore))}分
+- **班级总人数**: ${totalStudents}人
+- **平均积分**: ${averageScore}分
+- **最高积分**: ${maxScore}分
+- **最低积分**: ${minScore}分
+- **积分范围**: ${maxScore - minScore}分
 
-## 🏆 表现优秀学生
-${selectedGroup.students
-  .sort((a, b) => b.totalScore - a.totalScore)
-  .slice(0, 3)
-  .map((student, index) => `${index + 1}. ${student.name} - ${student.totalScore}分`)
-  .join('\n')}
+## 🏆 表现等级分布
+- **优秀 (180分以上)**: ${excellent}人 (${Math.round(excellent/totalStudents*100)}%)
+- **良好 (120-179分)**: ${good}人 (${Math.round(good/totalStudents*100)}%)
+- **一般 (80-119分)**: ${average}人 (${Math.round(average/totalStudents*100)}%)
+- **待提升 (80分以下)**: ${needsImprovement}人 (${Math.round(needsImprovement/totalStudents*100)}%)
 
-## 📈 学习建议
-1. **积分管理**: 建议为积分较低的学生提供更多鼓励和帮助
-2. **团队协作**: 可以组织小组活动，让高分学生帮助低分学生
-3. **个性化关注**: 根据每个学生的特点制定不同的激励策略
+## 📏 身体指标统计
+- **平均身高**: ${avgHeight}cm
+- **平均体重**: ${avgWeight}kg
+- **平均心率**: ${avgHeartRate}bpm
 
-## 💡 改进措施
-- 增加课堂互动环节，提高学生参与度
-- 建立积分兑换机制，增强学生积极性
-- 定期组织班级活动，促进同学间的交流合作
+## 🎯 重点关注学生
+${students.filter(s => s.totalScore < 100).map(s => `- **${s.name}**: ${s.totalScore}分 (需要更多鼓励和支持)`).join('\n') || '- 所有学生表现良好！'}
+
+## 💡 建议与改进
+${needsImprovement > 0 ? 
+  `- 建议为表现较差的学生提供额外的学习支持和鼓励
+- 可以设置小组学习，让优秀学生帮助需要提升的学生
+- 定期进行一对一沟通，了解学生困难` :
+  `- 班级整体表现优秀，继续保持！
+- 可以设置更高难度的挑战来激励学生
+- 鼓励学生之间互相学习，共同进步`}
+
+## 📈 下阶段目标
+- 提高班级平均分至 ${averageScore + 20} 分
+- 减少待提升学生数量至 ${Math.max(0, needsImprovement - 1)} 人
+- 保持优秀学生比例在 ${Math.round(excellent/totalStudents*100)}% 以上
 
 ---
-*本报告由AI智能分析生成，仅供参考*
+*报告生成时间: ${new Date().toLocaleString('zh-CN')}*
+*数据来源: 教学管理系统*
       `
       
       setAiReport(report)
@@ -225,6 +268,17 @@ ${selectedGroup.students
         }
       },
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
