@@ -19,7 +19,7 @@ export default function TestPage() {
             const data = await response.json()
             alert(JSON.stringify(data, null, 2))
           } catch (error) {
-            alert('API调用失败: ' + error.message)
+            alert('API调用失败: ' + (error instanceof Error ? error.message : String(error)))
           }
         }}
         style={{ padding: '10px 20px', margin: '10px' }}
@@ -41,7 +41,7 @@ export default function TestPage() {
             const data = await response.json()
             alert(JSON.stringify(data, null, 2))
           } catch (error) {
-            alert('登录测试失败: ' + error.message)
+            alert('登录测试失败: ' + (error instanceof Error ? error.message : String(error)))
           }
         }}
         style={{ padding: '10px 20px', margin: '10px' }}
