@@ -118,6 +118,35 @@ export default function TestAIPage() {
     }
   }
 
+  const testDataPassing = async () => {
+    setLoading(true)
+    try {
+      const testData = {
+        className: '测试班级',
+        studentCount: 3,
+        students: [
+          { name: '小明', score: 150, height: 120, weight: 25, heartRate: 80 },
+          { name: '小红', score: 200, height: 118, weight: 23, heartRate: 85 },
+          { name: '小刚', score: 120, height: 125, weight: 28, heartRate: 75 }
+        ]
+      }
+      
+      const response = await fetch('/api/ai/test-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: testData })
+      })
+      const data = await response.json()
+      setTestResult(data)
+    } catch (error) {
+      setTestResult({
+        error: '数据传递测试失败: ' + (error instanceof Error ? error.message : String(error))
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h1>🤖 AI API 测试页面</h1>
@@ -207,6 +236,23 @@ export default function TestAIPage() {
           }}
         >
           {loading ? '调试中...' : '详细调试API密钥'}
+        </button>
+        
+        <button 
+          onClick={testDataPassing}
+          disabled={loading}
+          style={{ 
+            padding: '10px 20px', 
+            margin: '10px',
+            backgroundColor: '#17a2b8',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.6 : 1
+          }}
+        >
+          {loading ? '测试中...' : '测试数据传递'}
         </button>
       </div>
       
