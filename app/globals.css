@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  body {
+    @apply bg-gradient-to-br from-pink-50 to-blue-50 min-h-screen font-cute;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-lg border border-gray-100 p-6;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-pink-400 to-purple-500 hover:from-pink-500 hover:to-purple-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg;
+  }
+  
+  .btn-success {
+    @apply bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md;
+  }
+  
+  .btn-danger {
+    @apply bg-gradient-to-r from-red-400 to-pink-500 hover:from-red-500 hover:to-pink-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-pink-400 focus:ring-4 focus:ring-pink-100 transition-all duration-200 bg-white/80 backdrop-blur-sm;
+  }
+  
+  .student-card {
+    @apply bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-pink-200 transition-all duration-300 p-6 mb-4 transform hover:scale-[1.02] hover:shadow-xl;
+  }
+  
+  .score-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-bold;
+  }
+  
+  .score-positive {
+    @apply bg-green-100 text-green-800 border border-green-200;
+  }
+  
+  .score-negative {
+    @apply bg-red-100 text-red-800 border border-red-200;
+  }
+  
+  .score-neutral {
+    @apply bg-gray-100 text-gray-800 border border-gray-200;
+  }
+}

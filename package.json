@@ -1,0 +1,43 @@
+{
+  "name": "ai-classroom-tool",
+  "version": "1.0.0",
+  "description": "AI-powered classroom interaction tool for student management and scoring",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:init": "node scripts/init-db.js",
+    "setup": "npm install && npm run db:generate && npm run db:push && npm run db:init"
+  },
+  "dependencies": {
+    "next": "^13.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "next-auth": "^4.24.0",
+    "prisma": "^5.6.0",
+    "@prisma/client": "^5.6.0",
+    "bcryptjs": "^2.4.3",
+    "chart.js": "^4.4.0",
+    "react-chartjs-2": "^5.2.0",
+    "lucide-react": "^0.292.0",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "framer-motion": "^10.16.0",
+    "react-hot-toast": "^2.4.1",
+    "openai": "^4.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/bcryptjs": "^2.4.0",
+    "typescript": "^5.2.0",
+    "eslint": "^8.52.0",
+    "eslint-config-next": "^14.0.0"
+  }
+}
