@@ -192,14 +192,14 @@ export default function AdminDashboardPage() {
     const interval = setInterval(() => {
       console.log('定时刷新触发')
       refreshData()
-    }, 15000) // 每15秒刷新一次，给变化检测更多时间
+    }, 5000) // 每5秒刷新一次，更频繁
 
     return () => clearInterval(interval)
   }, [])
 
-  // 数据变化检测
+  // 简化的数据同步 - 每3秒检查一次
   useEffect(() => {
-    const checkDataChanges = async () => {
+    const syncData = async () => {
       if (refreshing) return
       
       try {
@@ -218,31 +218,21 @@ export default function AdminDashboardPage() {
             })
           })
           
-          // 计算当前数据哈希值（包含更多字段）
-          const currentDataHash = JSON.stringify(students.map(s => ({ 
-            id: s.id, 
-            totalScore: s.totalScore, 
-            name: s.name,
-            groupId: s.groupId 
-          })))
+          // 直接更新状态
+          setAllGroups(data.groups || [])
+          setAllStudents(students)
+          setLastRefresh(new Date())
           
-          // 如果数据发生变化，立即刷新
-          if (currentDataHash !== lastDataHash && lastDataHash !== '') {
-            console.log('检测到数据变化，立即刷新', {
-              oldHash: lastDataHash.substring(0, 50),
-              newHash: currentDataHash.substring(0, 50)
-            })
-            await refreshData()
-          }
+          console.log('数据同步完成，学生总数:', students.length)
         }
       } catch (error) {
-        console.error('数据变化检测失败:', error)
+        console.error('数据同步失败:', error)
       }
     }
 
-    const interval = setInterval(checkDataChanges, 3000) // 每3秒检查一次，更频繁
+    const interval = setInterval(syncData, 3000) // 每3秒同步一次
     return () => clearInterval(interval)
-  }, [lastDataHash, refreshing])
+  }, [refreshing])
 
   // 页面获得焦点时立即刷新
   useEffect(() => {
