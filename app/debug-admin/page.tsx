@@ -28,7 +28,9 @@ export default function DebugAdminPage() {
   }
 
   const loadStudents = async () => {
-    addLog('开始加载学生数据...')
+    const callStack = new Error().stack?.split('\n')[2]?.trim() || 'unknown'
+    addLog(`开始加载学生数据... (调用栈: ${callStack})`)
+    addLog(`当前时间: ${new Date().toISOString()}`)
     setRefreshing(true)
     
     try {
@@ -240,6 +242,7 @@ export default function DebugAdminPage() {
   }
 
   useEffect(() => {
+    addLog('页面初始化，准备加载学生数据...')
     loadStudents()
   }, [])
 
