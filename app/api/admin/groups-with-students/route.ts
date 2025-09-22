@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
     console.log(`[${timestamp}] 查询到的班级数: ${groups.length}`)
     groups.forEach(group => {
       console.log(`[${timestamp}] 班级 ${group.name} 有 ${group.students.length} 个学生`)
-      group.students.forEach(student => {
+      group.students.forEach((student: any) => {
         console.log(`[${timestamp}] 学生 ${student.name} 分数: ${student.totalScore}`)
       })
     })
