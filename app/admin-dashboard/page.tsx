@@ -117,6 +117,17 @@ export default function AdminDashboardPage() {
         
         console.log('处理后的学生数据:', students.map(s => ({ id: s.id, name: s.name, totalScore: s.totalScore })))
         
+        // 检查是否有本地加分未同步到服务器
+        const now = Date.now()
+        const timeSinceLastScoreUpdate = now - lastScoreUpdate
+        const hasRecentLocalUpdate = timeSinceLastScoreUpdate < 10000 // 10秒内有本地更新
+        
+        if (hasRecentLocalUpdate) {
+          console.log(`⚠️ 检测到最近有本地加分操作（${Math.round(timeSinceLastScoreUpdate/1000)}秒前），跳过服务器数据覆盖`)
+          console.log('保持本地状态，避免覆盖加分结果')
+          return
+        }
+        
         setAllStudents(students)
         setLastRefresh(new Date())
         
@@ -227,6 +238,17 @@ export default function AdminDashboardPage() {
               })
             })
           })
+          
+          // 检查是否有本地加分未同步到服务器
+          const now = Date.now()
+          const timeSinceLastScoreUpdate = now - lastScoreUpdate
+          const hasRecentLocalUpdate = timeSinceLastScoreUpdate < 10000 // 10秒内有本地更新
+          
+          if (hasRecentLocalUpdate) {
+            console.log(`⚠️ 检测到最近有本地加分操作（${Math.round(timeSinceLastScoreUpdate/1000)}秒前），跳过服务器数据覆盖`)
+            console.log('保持本地状态，避免覆盖加分结果')
+            return
+          }
           
           // 直接更新状态
           setAllGroups(data.groups || [])
@@ -377,12 +399,12 @@ export default function AdminDashboardPage() {
           )
         )
         
-        // 延迟刷新数据，避免立即覆盖本地更新
-        setTimeout(async () => {
-          console.log('延迟刷新数据...')
-          await refreshData()
-          console.log('数据刷新完成')
-        }, 2000) // 延迟2秒刷新
+        // 不进行延迟刷新，避免覆盖本地状态
+        // setTimeout(async () => {
+        //   console.log('延迟刷新数据...')
+        //   await refreshData()
+        //   console.log('数据刷新完成')
+        // }, 2000) // 延迟2秒刷新
       } else {
         const errorData = await response.json()
         console.error('加分失败:', errorData)
@@ -452,6 +474,21 @@ export default function AdminDashboardPage() {
                   } text-white`}
                 >
                   强制刷新
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('强制同步服务器数据...')
+                    setLastScoreUpdate(0) // 重置加分时间，强制同步
+                    refreshData()
+                  }}
+                  disabled={refreshing}
+                  className={`px-3 py-2 rounded-lg transition-colors text-sm ${
+                    refreshing 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-purple-500 hover:bg-purple-600'
+                  } text-white`}
+                >
+                  强制同步
                 </button>
               </div>
               <div className="flex items-center space-x-2">
