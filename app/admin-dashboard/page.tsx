@@ -113,8 +113,13 @@ export default function AdminDashboardPage() {
         setAllStudents(students)
         setLastRefresh(new Date())
         
-        // 计算数据哈希值，用于检测变化
-        const dataHash = JSON.stringify(students.map(s => ({ id: s.id, totalScore: s.totalScore })))
+        // 计算数据哈希值，用于检测变化（包含更多字段）
+        const dataHash = JSON.stringify(students.map(s => ({ 
+          id: s.id, 
+          totalScore: s.totalScore, 
+          name: s.name,
+          groupId: s.groupId 
+        })))
         setLastDataHash(dataHash)
         
         toast.success('数据已刷新')
@@ -172,8 +177,9 @@ export default function AdminDashboardPage() {
   // 自动刷新数据
   useEffect(() => {
     const interval = setInterval(() => {
+      console.log('定时刷新触发')
       refreshData()
-    }, 10000) // 每10秒刷新一次
+    }, 15000) // 每15秒刷新一次，给变化检测更多时间
 
     return () => clearInterval(interval)
   }, [])
@@ -199,12 +205,20 @@ export default function AdminDashboardPage() {
             })
           })
           
-          // 计算当前数据哈希值
-          const currentDataHash = JSON.stringify(students.map(s => ({ id: s.id, totalScore: s.totalScore })))
+          // 计算当前数据哈希值（包含更多字段）
+          const currentDataHash = JSON.stringify(students.map(s => ({ 
+            id: s.id, 
+            totalScore: s.totalScore, 
+            name: s.name,
+            groupId: s.groupId 
+          })))
           
           // 如果数据发生变化，立即刷新
           if (currentDataHash !== lastDataHash && lastDataHash !== '') {
-            console.log('检测到数据变化，立即刷新')
+            console.log('检测到数据变化，立即刷新', {
+              oldHash: lastDataHash.substring(0, 50),
+              newHash: currentDataHash.substring(0, 50)
+            })
             await refreshData()
           }
         }
@@ -213,7 +227,7 @@ export default function AdminDashboardPage() {
       }
     }
 
-    const interval = setInterval(checkDataChanges, 5000) // 每5秒检查一次
+    const interval = setInterval(checkDataChanges, 3000) // 每3秒检查一次，更频繁
     return () => clearInterval(interval)
   }, [lastDataHash, refreshing])
 
@@ -354,29 +368,49 @@ export default function AdminDashboardPage() {
               <p className="text-gray-600">查看和管理所有班级的学生数据</p>
             </div>
             <div className="text-right">
-              <button
-                onClick={refreshData}
-                disabled={refreshing}
-                className={`px-4 py-2 rounded-lg transition-colors mb-2 ${
-                  refreshing 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-500 hover:bg-blue-600'
-                } text-white`}
-              >
-                {refreshing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
-                    刷新中...
-                  </>
-                ) : (
-                  '手动刷新'
-                )}
-              </button>
+              <div className="flex space-x-2 mb-2">
+                <button
+                  onClick={() => refreshData()}
+                  disabled={refreshing}
+                  className={`px-3 py-2 rounded-lg transition-colors text-sm ${
+                    refreshing 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white`}
+                >
+                  {refreshing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1 inline"></div>
+                      刷新中...
+                    </>
+                  ) : (
+                    '手动刷新'
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('强制刷新触发')
+                    setLastDataHash('') // 清空哈希值，强制检测变化
+                    refreshData()
+                  }}
+                  disabled={refreshing}
+                  className={`px-3 py-2 rounded-lg transition-colors text-sm ${
+                    refreshing 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-red-500 hover:bg-red-600'
+                  } text-white`}
+                >
+                  强制刷新
+                </button>
+              </div>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>
                 <p className="text-sm text-gray-500">
                   {refreshing ? '同步中...' : '实时同步'} • 最后更新: {lastRefresh.toLocaleTimeString()}
                 </p>
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                学生总数: {allStudents.length} • 数据哈希: {lastDataHash.substring(0, 20)}...
               </div>
             </div>
           </div>
