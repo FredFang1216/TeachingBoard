@@ -133,10 +133,15 @@ export default function DashboardPage() {
             const groupsResponse = await fetch(`/api/groups?teacherId=${currentUser.id}`)
             if (groupsResponse.ok) {
               const groupsData = await groupsResponse.json()
-              setGroups(groupsData.groups || [])
+              const updatedGroups = groupsData.groups || []
+              console.log('Updated groups:', updatedGroups)
+              setGroups(updatedGroups)
+              
+              // 更新选中的班级
               if (selectedGroup) {
-                const updatedGroup = groupsData.groups.find((g: Group) => g.id === selectedGroup.id)
+                const updatedGroup = updatedGroups.find((g: Group) => g.id === selectedGroup.id)
                 if (updatedGroup) {
+                  console.log('Updated selected group:', updatedGroup)
                   setSelectedGroup(updatedGroup)
                 }
               }
@@ -182,9 +187,12 @@ export default function DashboardPage() {
           const groupsResponse = await fetch(`/api/groups?teacherId=${currentUser.id}`)
           if (groupsResponse.ok) {
             const groupsData = await groupsResponse.json()
-            setGroups(groupsData.groups || [])
+            const updatedGroups = groupsData.groups || []
+            setGroups(updatedGroups)
+            
+            // 更新选中的班级
             if (selectedGroup) {
-              const updatedGroup = groupsData.groups.find((g: Group) => g.id === selectedGroup.id)
+              const updatedGroup = updatedGroups.find((g: Group) => g.id === selectedGroup.id)
               if (updatedGroup) {
                 setSelectedGroup(updatedGroup)
               }
