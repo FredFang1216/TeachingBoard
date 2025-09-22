@@ -347,6 +347,22 @@ export default function AdminDashboardPage() {
       if (response.ok) {
         const result = await response.json()
         console.log('加分成功:', result)
+        
+        // 验证数据库更新
+        if (result.studentBefore && result.studentAfter) {
+          const expectedScore = result.studentBefore.totalScore + points
+          const actualScore = result.studentAfter.totalScore
+          console.log(`数据库验证: 期望分数 ${expectedScore}, 实际分数 ${actualScore}`)
+          
+          if (expectedScore !== actualScore) {
+            console.error(`⚠️ 数据库更新异常！期望 ${expectedScore}，实际 ${actualScore}`)
+            toast.error('数据库更新异常，请重试')
+            return
+          } else {
+            console.log(`✅ 数据库更新正确`)
+          }
+        }
+        
         toast.success(`已加分 ${points} 分`)
         
         // 记录加分时间，防止自动刷新覆盖

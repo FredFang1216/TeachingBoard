@@ -20,6 +20,7 @@ export default function DebugAdminPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [debugLog, setDebugLog] = useState<string[]>([])
   const [lastScoreUpdate, setLastScoreUpdate] = useState<number>(0)
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('')
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString()
@@ -83,6 +84,19 @@ export default function DebugAdminPage() {
         const result = await response.json()
         addLog(`加分成功: ${JSON.stringify(result)}`)
         
+        // 验证数据库更新
+        if (result.studentBefore && result.studentAfter) {
+          const expectedScore = result.studentBefore.totalScore + points
+          const actualScore = result.studentAfter.totalScore
+          addLog(`数据库验证: 期望分数 ${expectedScore}, 实际分数 ${actualScore}`)
+          
+          if (expectedScore !== actualScore) {
+            addLog(`⚠️ 数据库更新异常！期望 ${expectedScore}，实际 ${actualScore}`)
+          } else {
+            addLog(`✅ 数据库更新正确`)
+          }
+        }
+        
         // 记录加分时间，防止自动刷新覆盖
         setLastScoreUpdate(Date.now())
         
@@ -113,6 +127,28 @@ export default function DebugAdminPage() {
     } catch (error) {
       addLog(`加分网络错误: ${error}`)
       toast.error('网络错误，请重试')
+    }
+  }
+
+  const verifyStudentScore = async (studentId: string) => {
+    addLog(`开始验证学生分数: ${studentId}`)
+    
+    try {
+      const response = await fetch(`/api/verify-score?studentId=${studentId}`)
+      if (response.ok) {
+        const data = await response.json()
+        addLog(`验证结果: ${JSON.stringify(data)}`)
+        
+        if (data.isConsistent) {
+          addLog(`✅ 学生分数一致: 数据库 ${data.student.totalScore} = 计算值 ${data.calculatedTotal}`)
+        } else {
+          addLog(`⚠️ 学生分数不一致: 数据库 ${data.student.totalScore} ≠ 计算值 ${data.calculatedTotal}`)
+        }
+      } else {
+        addLog(`验证失败: ${response.status}`)
+      }
+    } catch (error) {
+      addLog(`验证错误: ${error}`)
     }
   }
 
@@ -197,6 +233,12 @@ export default function DebugAdminPage() {
                       className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
                     >
                       +3
+                    </button>
+                    <button
+                      onClick={() => verifyStudentScore(student.id)}
+                      className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600"
+                    >
+                      验证
                     </button>
                   </div>
                 </div>
