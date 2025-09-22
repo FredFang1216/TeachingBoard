@@ -317,7 +317,7 @@ export default function DebugAdminPage() {
                 
                 <button
                   onClick={() => {
-                    setLogs([])
+                    setDebugLog([])
                     addLog('日志已清空')
                   }}
                   className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
