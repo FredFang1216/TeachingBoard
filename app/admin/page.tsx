@@ -160,9 +160,19 @@ export default function AdminPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       refreshData()
-    }, 30000) // 每30秒刷新一次
+    }, 10000) // 每10秒刷新一次
 
     return () => clearInterval(interval)
+  }, [])
+
+  // 页面获得焦点时立即刷新
+  useEffect(() => {
+    const handleFocus = () => {
+      refreshData()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
   const handleAddTeacher = async () => {
@@ -308,9 +318,12 @@ export default function AdminPage() {
                   )}
                 </button>
               </div>
-              <p className="text-sm text-gray-500">
-                最后更新: {lastRefresh.toLocaleTimeString()}
-              </p>
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>
+                <p className="text-sm text-gray-500">
+                  {refreshing ? '同步中...' : '实时同步'} • 最后更新: {lastRefresh.toLocaleTimeString()}
+                </p>
+              </div>
             </div>
           </div>
         </div>

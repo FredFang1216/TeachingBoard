@@ -63,6 +63,7 @@ export default function AdminDashboardPage() {
   const [showAddStudent, setShowAddStudent] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [refreshing, setRefreshing] = useState(false)
+  const [lastDataHash, setLastDataHash] = useState('')
   const [newStudent, setNewStudent] = useState({
     name: '',
     height: '',
@@ -111,6 +112,11 @@ export default function AdminDashboardPage() {
         })
         setAllStudents(students)
         setLastRefresh(new Date())
+        
+        // 计算数据哈希值，用于检测变化
+        const dataHash = JSON.stringify(students.map(s => ({ id: s.id, totalScore: s.totalScore })))
+        setLastDataHash(dataHash)
+        
         toast.success('数据已刷新')
       }
     } catch (error) {
@@ -167,9 +173,58 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       refreshData()
-    }, 30000) // 每30秒刷新一次
+    }, 10000) // 每10秒刷新一次
 
     return () => clearInterval(interval)
+  }, [])
+
+  // 数据变化检测
+  useEffect(() => {
+    const checkDataChanges = async () => {
+      if (refreshing) return
+      
+      try {
+        const timestamp = Date.now()
+        const response = await fetch(`/api/admin/groups-with-students?t=${timestamp}`)
+        if (response.ok) {
+          const data = await response.json()
+          const students: Student[] = []
+          data.groups.forEach((group: Group) => {
+            group.students.forEach((student: any) => {
+              students.push({
+                ...student,
+                groupName: group.name,
+                teacherName: group.teacher.name
+              })
+            })
+          })
+          
+          // 计算当前数据哈希值
+          const currentDataHash = JSON.stringify(students.map(s => ({ id: s.id, totalScore: s.totalScore })))
+          
+          // 如果数据发生变化，立即刷新
+          if (currentDataHash !== lastDataHash && lastDataHash !== '') {
+            console.log('检测到数据变化，立即刷新')
+            await refreshData()
+          }
+        }
+      } catch (error) {
+        console.error('数据变化检测失败:', error)
+      }
+    }
+
+    const interval = setInterval(checkDataChanges, 5000) // 每5秒检查一次
+    return () => clearInterval(interval)
+  }, [lastDataHash, refreshing])
+
+  // 页面获得焦点时立即刷新
+  useEffect(() => {
+    const handleFocus = () => {
+      refreshData()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
   // 过滤和排序学生
@@ -263,24 +318,8 @@ export default function AdminDashboardPage() {
       if (response.ok) {
         toast.success(`已加分 ${points} 分`)
         
-        // 重新加载数据
-        const groupsResponse = await fetch('/api/admin/groups-with-students')
-        if (groupsResponse.ok) {
-          const groupsData = await groupsResponse.json()
-          setAllGroups(groupsData.groups || [])
-          
-          const students: Student[] = []
-          groupsData.groups.forEach((group: Group) => {
-            group.students.forEach((student: any) => {
-              students.push({
-                ...student,
-                groupName: group.name,
-                teacherName: group.teacher.name
-              })
-            })
-          })
-          setAllStudents(students)
-        }
+        // 立即刷新数据
+        await refreshData()
       } else {
         const errorData = await response.json()
         toast.error(errorData.message || '积分更新失败')
@@ -333,9 +372,12 @@ export default function AdminDashboardPage() {
                   '手动刷新'
                 )}
               </button>
-              <p className="text-sm text-gray-500">
-                最后更新: {lastRefresh.toLocaleTimeString()}
-              </p>
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>
+                <p className="text-sm text-gray-500">
+                  {refreshing ? '同步中...' : '实时同步'} • 最后更新: {lastRefresh.toLocaleTimeString()}
+                </p>
+              </div>
             </div>
           </div>
         </div>
