@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
         name: group.teacher.name,
         email: group.teacher.email
       },
-      students: group.students.map(student => ({
+      students: group.students.map((student: any) => ({
         id: student.id,
         name: student.name,
         totalScore: student.totalScore,
