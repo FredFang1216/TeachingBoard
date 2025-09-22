@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     const { data } = await request.json()
     
     // 分析传入的数据
-    const analysis = {
+    const analysis: any = {
       receivedData: data,
       studentCount: data?.studentCount || 0,
       students: data?.students || [],
