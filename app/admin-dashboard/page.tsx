@@ -199,82 +199,82 @@ export default function AdminDashboardPage() {
     loadData()
   }, [router])
 
-  // 自动刷新数据
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log('定时刷新触发')
-      refreshData()
-    }, 5000) // 每5秒刷新一次，更频繁
+  // 禁用自动刷新，保留所有调试日志
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     console.log('定时刷新触发')
+  //     refreshData()
+  //   }, 5000) // 每5秒刷新一次，更频繁
 
-    return () => clearInterval(interval)
-  }, [])
+  //   return () => clearInterval(interval)
+  // }, [])
 
-  // 简化的数据同步 - 每3秒检查一次，但避免在加分后立即同步
-  useEffect(() => {
-    const syncData = async () => {
-      if (refreshing) return
+  // 禁用自动同步，保留所有调试日志
+  // useEffect(() => {
+  //   const syncData = async () => {
+  //     if (refreshing) return
       
-      const now = Date.now()
-      const timeSinceLastScoreUpdate = now - lastScoreUpdate
+  //     const now = Date.now()
+  //     const timeSinceLastScoreUpdate = now - lastScoreUpdate
       
-      // 如果距离上次加分不到5秒，跳过同步
-      if (timeSinceLastScoreUpdate < 5000) {
-        console.log(`跳过数据同步，距离上次加分仅 ${Math.round(timeSinceLastScoreUpdate/1000)} 秒`)
-        return
-      }
+  //     // 如果距离上次加分不到5秒，跳过同步
+  //     if (timeSinceLastScoreUpdate < 5000) {
+  //       console.log(`跳过数据同步，距离上次加分仅 ${Math.round(timeSinceLastScoreUpdate/1000)} 秒`)
+  //       return
+  //     }
       
-      try {
-        const timestamp = Date.now()
-        const response = await fetch(`/api/admin/groups-with-students?t=${timestamp}`)
-        if (response.ok) {
-          const data = await response.json()
-          const students: Student[] = []
-          data.groups.forEach((group: Group) => {
-            group.students.forEach((student: any) => {
-              students.push({
-                ...student,
-                groupName: group.name,
-                teacherName: group.teacher.name
-              })
-            })
-          })
+  //     try {
+  //       const timestamp = Date.now()
+  //       const response = await fetch(`/api/admin/groups-with-students?t=${timestamp}`)
+  //       if (response.ok) {
+  //         const data = await response.json()
+  //         const students: Student[] = []
+  //         data.groups.forEach((group: Group) => {
+  //           group.students.forEach((student: any) => {
+  //             students.push({
+  //               ...student,
+  //               groupName: group.name,
+  //               teacherName: group.teacher.name
+  //             })
+  //           })
+  //         })
           
-          // 检查是否有本地加分未同步到服务器
-          const now = Date.now()
-          const timeSinceLastScoreUpdate = now - lastScoreUpdate
-          const hasRecentLocalUpdate = timeSinceLastScoreUpdate < 10000 // 10秒内有本地更新
+  //         // 检查是否有本地加分未同步到服务器
+  //         const now = Date.now()
+  //         const timeSinceLastScoreUpdate = now - lastScoreUpdate
+  //         const hasRecentLocalUpdate = timeSinceLastScoreUpdate < 10000 // 10秒内有本地更新
           
-          if (hasRecentLocalUpdate) {
-            console.log(`⚠️ 检测到最近有本地加分操作（${Math.round(timeSinceLastScoreUpdate/1000)}秒前），跳过服务器数据覆盖`)
-            console.log('保持本地状态，避免覆盖加分结果')
-            return
-          }
+  //         if (hasRecentLocalUpdate) {
+  //           console.log(`⚠️ 检测到最近有本地加分操作（${Math.round(timeSinceLastScoreUpdate/1000)}秒前），跳过服务器数据覆盖`)
+  //           console.log('保持本地状态，避免覆盖加分结果')
+  //           return
+  //         }
           
-          // 直接更新状态
-          setAllGroups(data.groups || [])
-          setAllStudents(students)
-          setLastRefresh(new Date())
+  //         // 直接更新状态
+  //         setAllGroups(data.groups || [])
+  //         setAllStudents(students)
+  //         setLastRefresh(new Date())
           
-          console.log('数据同步完成，学生总数:', students.length)
-        }
-      } catch (error) {
-        console.error('数据同步失败:', error)
-      }
-    }
+  //         console.log('数据同步完成，学生总数:', students.length)
+  //       }
+  //     } catch (error) {
+  //       console.error('数据同步失败:', error)
+  //     }
+  //   }
 
-    const interval = setInterval(syncData, 3000) // 每3秒同步一次
-    return () => clearInterval(interval)
-  }, [refreshing, lastScoreUpdate])
+  //   const interval = setInterval(syncData, 3000) // 每3秒同步一次
+  //   return () => clearInterval(interval)
+  // }, [refreshing, lastScoreUpdate])
 
-  // 页面获得焦点时立即刷新
-  useEffect(() => {
-    const handleFocus = () => {
-      refreshData()
-    }
+  // 禁用页面获得焦点时自动刷新
+  // useEffect(() => {
+  //   const handleFocus = () => {
+  //     refreshData()
+  //   }
 
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [])
+  //   window.addEventListener('focus', handleFocus)
+  //   return () => window.removeEventListener('focus', handleFocus)
+  // }, [])
 
   // 过滤和排序学生
   const filteredStudents = allStudents
