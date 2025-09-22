@@ -70,9 +70,16 @@ export default function DebugAdminPage() {
           if (currentStudent) {
             if (currentStudent.totalScore !== newStudent.totalScore) {
               addLog(`⚠️ 学生 ${newStudent.name} 分数变化: ${currentStudent.totalScore} → ${newStudent.totalScore}`)
+            } else {
+              addLog(`✅ 学生 ${newStudent.name} 分数未变化: ${currentStudent.totalScore}`)
             }
+          } else {
+            addLog(`🆕 新学生: ${newStudent.name} = ${newStudent.totalScore}`)
           }
         })
+        
+        addLog(`设置新状态前，当前状态中的金富欣分数: ${students.find(s => s.name === '金富欣')?.totalScore || '未找到'}`)
+        addLog(`即将设置的新状态中金富欣分数: ${allStudents.find(s => s.name === '金富欣')?.totalScore || '未找到'}`)
         
         setStudents(allStudents)
         addLog('学生数据设置完成')
@@ -242,15 +249,35 @@ export default function DebugAdminPage() {
           <div className="bg-white rounded-xl p-6 shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">学生列表 ({students.length})</h2>
-              <button
-                onClick={loadStudents}
-                disabled={refreshing}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  refreshing ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'
-                } text-white`}
-              >
-                {refreshing ? '刷新中...' : '手动刷新'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={loadStudents}
+                  disabled={refreshing}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    refreshing ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white`}
+                >
+                  {refreshing ? '刷新中...' : '手动刷新'}
+                </button>
+                <button
+                  onClick={() => {
+                    addLog('强制修改金富欣状态...')
+                    const jinFuxin = students.find(s => s.name === '金富欣')
+                    if (jinFuxin) {
+                      addLog(`强制修改前金富欣分数: ${jinFuxin.totalScore}`)
+                      setStudents(prev => prev.map(s => 
+                        s.id === jinFuxin.id 
+                          ? { ...s, totalScore: s.totalScore + 1 }
+                          : s
+                      ))
+                      addLog('强制增加1分')
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                >
+                  强制修改
+                </button>
+              </div>
             </div>
             
             <div className="space-y-4 max-h-96 overflow-y-auto">

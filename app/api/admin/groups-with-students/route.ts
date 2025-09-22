@@ -50,6 +50,14 @@ export async function GET(request: NextRequest) {
       students: g.students.map(s => ({ id: s.id, name: s.name, totalScore: s.totalScore }))
     })))
     
+    // 特别检查金富欣的数据
+    const jinFuxin = formattedGroups.flatMap(g => g.students).find(s => s.name === '金富欣')
+    if (jinFuxin) {
+      console.log('金富欣在API返回数据中:', jinFuxin)
+    } else {
+      console.log('金富欣未在API返回数据中找到')
+    }
+    
     return NextResponse.json({ groups: formattedGroups })
   } catch (error) {
     console.error('Get groups with students error:', error)
