@@ -64,6 +64,7 @@ export default function AdminDashboardPage() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [refreshing, setRefreshing] = useState(false)
   const [lastDataHash, setLastDataHash] = useState('')
+  const [lastScoreUpdate, setLastScoreUpdate] = useState<number>(0)
   const [newStudent, setNewStudent] = useState({
     name: '',
     height: '',
@@ -197,10 +198,19 @@ export default function AdminDashboardPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // 简化的数据同步 - 每3秒检查一次
+  // 简化的数据同步 - 每3秒检查一次，但避免在加分后立即同步
   useEffect(() => {
     const syncData = async () => {
       if (refreshing) return
+      
+      const now = Date.now()
+      const timeSinceLastScoreUpdate = now - lastScoreUpdate
+      
+      // 如果距离上次加分不到5秒，跳过同步
+      if (timeSinceLastScoreUpdate < 5000) {
+        console.log(`跳过数据同步，距离上次加分仅 ${Math.round(timeSinceLastScoreUpdate/1000)} 秒`)
+        return
+      }
       
       try {
         const timestamp = Date.now()
@@ -232,7 +242,7 @@ export default function AdminDashboardPage() {
 
     const interval = setInterval(syncData, 3000) // 每3秒同步一次
     return () => clearInterval(interval)
-  }, [refreshing])
+  }, [refreshing, lastScoreUpdate])
 
   // 页面获得焦点时立即刷新
   useEffect(() => {
@@ -339,6 +349,9 @@ export default function AdminDashboardPage() {
         console.log('加分成功:', result)
         toast.success(`已加分 ${points} 分`)
         
+        // 记录加分时间，防止自动刷新覆盖
+        setLastScoreUpdate(Date.now())
+        
         // 立即更新本地状态
         setAllStudents(prevStudents => 
           prevStudents.map(student => 
@@ -348,10 +361,12 @@ export default function AdminDashboardPage() {
           )
         )
         
-        // 立即刷新数据
-        console.log('开始刷新数据...')
-        await refreshData()
-        console.log('数据刷新完成')
+        // 延迟刷新数据，避免立即覆盖本地更新
+        setTimeout(async () => {
+          console.log('延迟刷新数据...')
+          await refreshData()
+          console.log('数据刷新完成')
+        }, 2000) // 延迟2秒刷新
       } else {
         const errorData = await response.json()
         console.error('加分失败:', errorData)

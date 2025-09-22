@@ -19,6 +19,7 @@ export default function DebugAdminPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [debugLog, setDebugLog] = useState<string[]>([])
+  const [lastScoreUpdate, setLastScoreUpdate] = useState<number>(0)
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString()
@@ -82,6 +83,9 @@ export default function DebugAdminPage() {
         const result = await response.json()
         addLog(`加分成功: ${JSON.stringify(result)}`)
         
+        // 记录加分时间，防止自动刷新覆盖
+        setLastScoreUpdate(Date.now())
+        
         // 立即更新本地状态
         setStudents(prevStudents => {
           const updated = prevStudents.map(student => 
@@ -95,11 +99,11 @@ export default function DebugAdminPage() {
         
         toast.success(`已加分 ${points} 分`)
         
-        // 延迟刷新服务器数据
+        // 延迟刷新服务器数据，但等待更长时间
         setTimeout(() => {
           addLog('延迟刷新服务器数据...')
           loadStudents()
-        }, 1000)
+        }, 3000) // 改为3秒，给服务器更多时间
         
       } else {
         const errorData = await response.json()
@@ -116,15 +120,24 @@ export default function DebugAdminPage() {
     loadStudents()
   }, [])
 
-  // 自动刷新
+  // 自动刷新 - 但避免在加分后立即刷新
   useEffect(() => {
     const interval = setInterval(() => {
+      const now = Date.now()
+      const timeSinceLastScoreUpdate = now - lastScoreUpdate
+      
+      // 如果距离上次加分不到5秒，跳过自动刷新
+      if (timeSinceLastScoreUpdate < 5000) {
+        addLog(`跳过自动刷新，距离上次加分仅 ${Math.round(timeSinceLastScoreUpdate/1000)} 秒`)
+        return
+      }
+      
       addLog('自动刷新触发')
       loadStudents()
     }, 10000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [lastScoreUpdate])
 
   if (loading) {
     return (
