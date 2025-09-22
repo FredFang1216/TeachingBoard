@@ -231,24 +231,24 @@ export default function DebugAdminPage() {
     loadStudents()
   }, [])
 
-  // 自动刷新 - 但避免在加分后立即刷新
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now()
-      const timeSinceLastScoreUpdate = now - lastScoreUpdate
+  // 禁用自动刷新，保留所有调试日志
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     const now = Date.now()
+  //     const timeSinceLastScoreUpdate = now - lastScoreUpdate
       
-      // 如果距离上次加分不到5秒，跳过自动刷新
-      if (timeSinceLastScoreUpdate < 5000) {
-        addLog(`跳过自动刷新，距离上次加分仅 ${Math.round(timeSinceLastScoreUpdate/1000)} 秒`)
-        return
-      }
+  //     // 如果距离上次加分不到5秒，跳过自动刷新
+  //     if (timeSinceLastScoreUpdate < 5000) {
+  //       addLog(`跳过自动刷新，距离上次加分仅 ${Math.round(timeSinceLastScoreUpdate/1000)} 秒`)
+  //       return
+  //     }
       
-      addLog('自动刷新触发')
-      loadStudents()
-    }, 10000)
+  //     addLog('自动刷新触发')
+  //     loadStudents()
+  //   }, 10000)
 
-    return () => clearInterval(interval)
-  }, [lastScoreUpdate])
+  //   return () => clearInterval(interval)
+  // }, [lastScoreUpdate])
 
   if (loading) {
     return (
@@ -298,6 +298,16 @@ export default function DebugAdminPage() {
                   className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
                 >
                   强制修改
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setLogs([])
+                    addLog('日志已清空')
+                  }}
+                  className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  清空日志
                 </button>
                 
                 <button
