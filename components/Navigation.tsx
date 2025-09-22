@@ -35,8 +35,10 @@ export default function Navigation({ onLogout }: NavigationProps) {
     { href: '/settings', label: '设置', icon: Settings },
   ]
 
-  // 如果是管理员，添加管理页面
+  // 如果是管理员，替换为管理员专用页面
   if (currentUser?.role === 'ADMIN') {
+    navItems[0] = { href: '/admin-dashboard', label: '学生管理', icon: Users }
+    navItems[1] = { href: '/admin-analytics', label: '数据分析', icon: BarChart3 }
     navItems.push({ href: '/admin', label: '管理控制台', icon: Shield })
   }
 
