@@ -18,7 +18,11 @@ export async function GET(request: NextRequest) {
     console.log(`[${timestamp}] Prisma客户端重新连接完成`)
     
     // 等待一小段时间确保连接稳定
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
+    // 强制刷新数据库连接池
+    await prisma.$executeRaw`SELECT 1`
+    console.log(`[${timestamp}] 数据库连接池已刷新`)
     
     // 先直接查询金富欣的当前状态
     const jinFuxinData = await prisma.student.findFirst({
@@ -43,6 +47,29 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { createdAt: 'desc' }
     })
+    
+    // 强制刷新每个学生的数据，确保获取最新分数
+    for (const group of groups) {
+      for (const student of group.students) {
+        // 重新查询每个学生的最新数据
+        const freshStudent = await prisma.student.findUnique({
+          where: { id: student.id },
+          select: {
+            id: true,
+            name: true,
+            totalScore: true,
+            updatedAt: true
+          }
+        })
+        
+        if (freshStudent) {
+          // 更新学生数据
+          student.totalScore = freshStudent.totalScore
+          student.updatedAt = freshStudent.updatedAt
+          console.log(`[${timestamp}] 更新学生 ${student.name} 分数: ${freshStudent.totalScore}`)
+        }
+      }
+    }
     
     // 添加调试日志
     console.log(`[${timestamp}] 查询到的班级数: ${groups.length}`)
