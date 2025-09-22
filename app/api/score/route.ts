@@ -24,29 +24,36 @@ export async function POST(request: NextRequest) {
     
     console.log('加分前学生信息:', studentBefore)
 
-    // 创建积分记录
-    const scoreRecord = await prisma.scoreRecord.create({
-      data: {
-        studentId,
-        points: parseInt(points),
-        reason,
-      },
-    })
-    
-    console.log('积分记录创建成功:', scoreRecord)
+    // 使用事务确保数据一致性
+    const result = await prisma.$transaction(async (tx) => {
+      // 创建积分记录
+      const scoreRecord = await tx.scoreRecord.create({
+        data: {
+          studentId,
+          points: parseInt(points),
+          reason,
+        },
+      })
+      
+      console.log('积分记录创建成功:', scoreRecord)
 
-    // 更新学生总积分
-    const updatedStudent = await prisma.student.update({
-      where: { id: studentId },
-      data: {
-        totalScore: {
-          increment: parseInt(points)
-        }
-      },
-      select: { totalScore: true, name: true }
+      // 更新学生总积分
+      const updatedStudent = await tx.student.update({
+        where: { id: studentId },
+        data: {
+          totalScore: {
+            increment: parseInt(points)
+          }
+        },
+        select: { totalScore: true, name: true }
+      })
+      
+      console.log('学生分数更新成功:', updatedStudent)
+      
+      return { scoreRecord, updatedStudent }
     })
     
-    console.log('学生分数更新成功:', updatedStudent)
+    const { scoreRecord, updatedStudent } = result
 
     return NextResponse.json({
       message: '积分更新成功',

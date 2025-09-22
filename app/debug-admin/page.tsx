@@ -277,6 +277,35 @@ export default function DebugAdminPage() {
                 >
                   强制修改
                 </button>
+                
+                <button
+                  onClick={async () => {
+                    addLog('检查数据库实际状态...')
+                    const jinFuxin = students.find(s => s.name === '金富欣')
+                    if (jinFuxin) {
+                      try {
+                        const response = await fetch(`/api/test-student?studentId=${jinFuxin.id}`)
+                        if (response.ok) {
+                          const data = await response.json()
+                          addLog(`数据库实际状态: ${data.student.name} = ${data.student.totalScore}`)
+                          addLog(`前端当前状态: ${jinFuxin.name} = ${jinFuxin.totalScore}`)
+                          addLog(`API返回状态: 7 (从之前的日志)`)
+                          
+                          if (data.student.totalScore === jinFuxin.totalScore) {
+                            addLog('✅ 数据库和前端状态一致')
+                          } else {
+                            addLog('⚠️ 数据库和前端状态不一致')
+                          }
+                        }
+                      } catch (error) {
+                        addLog(`查询失败: ${error}`)
+                      }
+                    }
+                  }}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors"
+                >
+                  检查数据库
+                </button>
               </div>
             </div>
             
