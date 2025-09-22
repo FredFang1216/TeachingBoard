@@ -12,12 +12,26 @@ export async function GET(request: NextRequest) {
     await prisma.$connect()
     console.log(`[${timestamp}] Prisma客户端已连接`)
     
-    // 先直接查询金富欣的当前状态
-    const jinFuxinDirect = await prisma.student.findFirst({
-      where: { name: '金富欣' },
-      select: { id: true, name: true, totalScore: true, updatedAt: true }
-    })
+    // 先直接查询金富欣的当前状态，使用原始SQL确保获取最新数据
+    const jinFuxinDirect = await prisma.$queryRaw`
+      SELECT id, name, "totalScore", "updatedAt" 
+      FROM "Student" 
+      WHERE name = '金富欣' 
+      LIMIT 1
+    `
     console.log(`[${timestamp}] 直接查询金富欣状态:`, jinFuxinDirect)
+    
+    // 如果原始SQL查询失败，回退到Prisma查询
+    let jinFuxinData = null
+    if (Array.isArray(jinFuxinDirect) && jinFuxinDirect.length > 0) {
+      jinFuxinData = jinFuxinDirect[0]
+    } else {
+      jinFuxinData = await prisma.student.findFirst({
+        where: { name: '金富欣' },
+        select: { id: true, name: true, totalScore: true, updatedAt: true }
+      })
+    }
+    console.log(`[${timestamp}] 最终金富欣状态:`, jinFuxinData)
     
     // 获取所有班级及其学生和教师信息
     const groups = await prisma.group.findMany({
@@ -78,7 +92,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       groups: formattedGroups,
       timestamp: timestamp,
-      jinFuxinDirect: jinFuxinDirect
+      jinFuxinDirect: jinFuxinData
     })
   } catch (error) {
     console.error('Get groups with students error:', error)

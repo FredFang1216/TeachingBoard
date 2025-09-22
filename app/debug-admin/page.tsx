@@ -60,7 +60,15 @@ export default function DebugAdminPage() {
         
         // 显示API返回的额外信息
         if (data.timestamp) {
+          const currentTime = Date.now()
+          const timeDiff = currentTime - data.timestamp
           addLog(`API查询时间戳: ${data.timestamp}`)
+          addLog(`当前时间: ${currentTime}`)
+          addLog(`时间差: ${timeDiff}ms`)
+          
+          if (timeDiff > 30000) {
+            addLog('⚠️ API数据可能过时（超过30秒）')
+          }
         }
         if (data.jinFuxinDirect) {
           addLog(`API直接查询金富欣: ${data.jinFuxinDirect.name} = ${data.jinFuxinDirect.totalScore}`)
