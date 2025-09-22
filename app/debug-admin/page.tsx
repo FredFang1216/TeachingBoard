@@ -101,6 +101,12 @@ export default function DebugAdminPage() {
         addLog('学生数据设置完成')
       } else {
         addLog(`API请求失败: ${response.status}`)
+        try {
+          const errorData = await response.json()
+          addLog(`错误详情: ${JSON.stringify(errorData)}`)
+        } catch (e) {
+          addLog(`无法解析错误响应: ${e}`)
+        }
       }
     } catch (error) {
       addLog(`加载失败: ${error}`)
