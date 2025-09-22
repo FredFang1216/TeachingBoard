@@ -394,6 +394,16 @@ export default function DebugAdminPage() {
                           const addData = await addResponse.json()
                           addLog(`加分操作响应: ${JSON.stringify(addData)}`)
                           
+                          // 更新前端状态
+                          setStudents(prevStudents => 
+                            prevStudents.map(student => 
+                              student.id === jinFuxin.id 
+                                ? { ...student, totalScore: student.totalScore + 1 }
+                                : student
+                            )
+                          )
+                          addLog(`前端状态已更新: ${jinFuxin.name} = ${jinFuxin.totalScore + 1}`)
+                          
                           // 再次查询数据库状态
                           const afterResponse = await fetch(`/api/test-student?studentId=${jinFuxin.id}`)
                           const afterData = await afterResponse.json()
