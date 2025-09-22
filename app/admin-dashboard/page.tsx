@@ -509,6 +509,35 @@ export default function AdminDashboardPage() {
                 >
                   测试同步
                 </button>
+                <button
+                  onClick={async () => {
+                    console.log('测试跨账户同步...')
+                    try {
+                      const response = await fetch('/api/test-cross-sync')
+                      if (response.ok) {
+                        const data = await response.json()
+                        console.log('跨账户同步结果:', data)
+                        const jinFuxin = data.jinFuxin
+                        if (jinFuxin) {
+                          const recentRecords = jinFuxin.scoreRecords.slice(0, 3)
+                          const recordsText = recentRecords.map(r => 
+                            `${r.points > 0 ? '+' : ''}${r.points}分 (${r.reason}) - ${new Date(r.createdAt).toLocaleTimeString()}`
+                          ).join('\n')
+                          
+                          alert(`跨账户同步测试完成！\n\n金富欣信息:\n分数: ${jinFuxin.totalScore}\n班级: ${jinFuxin.group?.name}\n教师: ${jinFuxin.group?.teacher?.name}\n更新时间: ${new Date(jinFuxin.updatedAt).toLocaleString()}\n\n最近加分记录:\n${recordsText}`)
+                        } else {
+                          alert('未找到金富欣学生信息')
+                        }
+                      }
+                    } catch (error) {
+                      console.error('跨账户同步测试失败:', error)
+                      alert('跨账户同步测试失败')
+                    }
+                  }}
+                  className="px-3 py-2 rounded-lg transition-colors text-sm bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  跨账户测试
+                </button>
               </div>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>

@@ -125,6 +125,7 @@ export default function DashboardPage() {
   const handleAddScore = async (student: Student, points: number, reason?: string) => {
     if (reason) {
       // 直接加分，不需要弹窗
+      console.log(`教师界面加分: ${student.name}, ${points}分, ${reason}`)
       try {
         const response = await fetch('/api/score', {
           method: 'POST',
@@ -137,6 +138,8 @@ export default function DashboardPage() {
         })
 
         if (response.ok) {
+          const result = await response.json()
+          console.log('教师界面加分成功:', result)
           toast.success(`已为 ${student.name} 加分 ${points} 分`)
           // 重新加载数据
           if (currentUser) {
@@ -159,9 +162,11 @@ export default function DashboardPage() {
           }
         } else {
           const errorData = await response.json()
+          console.error('教师界面加分失败:', errorData)
           toast.error(errorData.message || '加分失败')
         }
       } catch (error) {
+        console.error('教师界面加分网络错误:', error)
         toast.error('网络错误，请重试')
       }
     } else {
