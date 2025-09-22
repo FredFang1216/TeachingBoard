@@ -58,6 +58,14 @@ export default function DebugAdminPage() {
         console.log('API返回的原始数据:', data)
         console.log('处理后的学生数据:', allStudents)
         
+        // 显示API返回的额外信息
+        if (data.timestamp) {
+          addLog(`API查询时间戳: ${data.timestamp}`)
+        }
+        if (data.jinFuxinDirect) {
+          addLog(`API直接查询金富欣: ${data.jinFuxinDirect.name} = ${data.jinFuxinDirect.totalScore}`)
+        }
+        
         // 对比当前状态和新数据
         const currentStudentIds = students.map(s => s.id)
         const newStudentIds = allStudents.map(s => s.id)
