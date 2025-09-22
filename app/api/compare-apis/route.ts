@@ -86,12 +86,25 @@ export async function GET(request: NextRequest) {
       finalConsistency = chosenDirect && chosenApi && chosenDirect.totalScore === chosenApi.totalScore
     }
     
+    // 兼容旧字段，避免前端显示 undefined
+    const legacyDirect = chosenDirect ? { 
+      ...chosenDirect, 
+      totalScore: typeof chosenDirect.totalScore === 'number' ? chosenDirect.totalScore : Number(chosenDirect.totalScore ?? 0) 
+    } : null
+    const legacyGroupsApi = chosenApi ? { 
+      ...chosenApi, 
+      totalScore: typeof chosenApi.totalScore === 'number' ? chosenApi.totalScore : Number(chosenApi.totalScore ?? 0) 
+    } : null
+
     return NextResponse.json({
       timestamp,
       directQueryAll,
       groupsApiJinFuxinList,
-      chosenDirect,
-      chosenApi,
+      chosenDirect: legacyDirect,
+      chosenApi: legacyGroupsApi,
+      // 旧字段名（向后兼容）
+      directQuery: legacyDirect,
+      groupsApiJinFuxin: legacyGroupsApi,
       isDataConsistent: finalConsistency,
       groupsApiTimestamp: groupsApiData?.timestamp,
       timeDiff: groupsApiData?.timestamp ? timestamp - groupsApiData.timestamp : null,
