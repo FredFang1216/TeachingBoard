@@ -27,79 +27,80 @@ export async function GET(request: NextRequest) {
     })
     console.log(`[${timestamp}] 直接查询金富欣状态:`, jinFuxinData)
     
-    // 获取所有班级及其学生和教师信息，使用原始查询避免缓存
-    const groups = await prisma.$queryRaw`
-      SELECT 
-        g.id,
-        g.name,
-        g."createdAt",
-        g."teacherId",
-        t.name as teacher_name,
-        t.email as teacher_email,
-        t.id as teacher_id
-      FROM "Group" g
-      LEFT JOIN "User" t ON g."teacherId" = t.id
-      ORDER BY g."createdAt" DESC
-    `
-    
-    console.log(`[${timestamp}] 原始查询班级数据:`, groups)
-    
-    // 为每个班级查询学生数据
-    const groupsWithStudents = await Promise.all(
-      (groups as any[]).map(async (group) => {
-        const students = await prisma.$queryRaw`
-          SELECT 
-            s.id,
-            s.name,
-            s."totalScore",
-            s."updatedAt",
-            s."groupId"
-          FROM "Student" s
-          WHERE s."groupId" = ${group.id}
-          ORDER BY s."totalScore" DESC
-        `
-        
-        console.log(`[${timestamp}] 班级 ${group.name} 的学生数据:`, students)
-        
-        return {
-          id: group.id,
-          name: group.name,
-          createdAt: group.createdAt,
-          teacherId: group.teacherId,
-          teacher: {
-            id: group.teacher_id,
-            name: group.teacher_name,
-            email: group.teacher_email
-          },
-          students: students
+    // 获取所有班级及其学生和教师信息，强制刷新避免缓存
+    const groups = await prisma.group.findMany({
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        students: {
+          orderBy: { totalScore: 'desc' }
         }
-      })
-    )
+      },
+      orderBy: { createdAt: 'desc' }
+    })
     
-    console.log(`[${timestamp}] 处理后的班级数据:`, groupsWithStudents)
+    // 强制刷新每个学生的数据，避免缓存
+    for (const group of groups) {
+      for (const student of group.students) {
+        // 重新查询每个学生的最新数据
+        const freshStudent = await prisma.student.findUnique({
+          where: { id: student.id },
+          select: {
+            id: true,
+            name: true,
+            totalScore: true,
+            height: true,
+            weight: true,
+            vitalCapacity: true,
+            sitAndReach: true,
+            run50m: true,
+            ropeSkipping: true,
+            heartRate: true,
+            singleLegStand: true,
+            groupId: true,
+            createdAt: true
+          }
+        })
+        
+        if (freshStudent) {
+          // 更新学生数据
+          Object.assign(student, freshStudent)
+        }
+      }
+    }
     
-    console.log(`[${timestamp}] 查询完成，班级数: ${groupsWithStudents.length}`)
+    console.log(`[${timestamp}] 查询完成，班级数: ${groups.length}`)
     
     // 格式化数据
-    const formattedGroups = groupsWithStudents.map(group => ({
+    const formattedGroups = groups.map(group => ({
       id: group.id,
       name: group.name,
-      description: '', // 原始查询中没有description字段
-      createdAt: new Date(group.createdAt).toISOString(),
+      description: group.description || '',
+      createdAt: group.createdAt.toISOString(),
       teacher: {
         id: group.teacher.id,
         name: group.teacher.name,
         email: group.teacher.email
       },
-      students: (group.students as any[]).map(student => ({
+      students: group.students.map(student => ({
         id: student.id,
         name: student.name,
         totalScore: student.totalScore,
-        height: null, // 原始查询中没有这些字段
-        weight: null,
-        heartRate: null,
+        height: student.height,
+        weight: student.weight,
+        vitalCapacity: student.vitalCapacity,
+        sitAndReach: student.sitAndReach,
+        run50m: student.run50m,
+        ropeSkipping: student.ropeSkipping,
+        heartRate: student.heartRate,
+        singleLegStand: student.singleLegStand,
         groupId: student.groupId,
-        createdAt: new Date(student.updatedAt).toISOString()
+        createdAt: student.createdAt.toISOString()
       }))
     }))
     
