@@ -297,12 +297,13 @@ export default function DebugAdminPage() {
                           const data = await response.json()
                           addLog(`数据库实际状态: ${data.student.name} = ${data.student.totalScore}`)
                           addLog(`前端当前状态: ${jinFuxin.name} = ${jinFuxin.totalScore}`)
-                          addLog(`API返回状态: 7 (从之前的日志)`)
+                          addLog(`API返回状态: 9 (从之前的日志)`)
                           
                           if (data.student.totalScore === jinFuxin.totalScore) {
                             addLog('✅ 数据库和前端状态一致')
                           } else {
                             addLog('⚠️ 数据库和前端状态不一致')
+                            addLog(`差异: 前端${jinFuxin.totalScore} - 数据库${data.student.totalScore} = ${jinFuxin.totalScore - data.student.totalScore}`)
                           }
                         }
                       } catch (error) {
@@ -313,6 +314,57 @@ export default function DebugAdminPage() {
                   className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors"
                 >
                   检查数据库
+                </button>
+                
+                <button
+                  onClick={async () => {
+                    addLog('测试加分操作...')
+                    const jinFuxin = students.find(s => s.name === '金富欣')
+                    if (jinFuxin) {
+                      try {
+                        addLog(`加分前状态: 前端${jinFuxin.totalScore}, 数据库需要查询`)
+                        
+                        // 先查询数据库当前状态
+                        const beforeResponse = await fetch(`/api/test-student?studentId=${jinFuxin.id}`)
+                        const beforeData = await beforeResponse.json()
+                        addLog(`加分前数据库状态: ${beforeData.student.totalScore}`)
+                        
+                        // 执行加分操作
+                        const addResponse = await fetch('/api/score', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            studentId: jinFuxin.id,
+                            points: 1,
+                            reason: '调试测试加分'
+                          })
+                        })
+                        
+                        if (addResponse.ok) {
+                          const addData = await addResponse.json()
+                          addLog(`加分操作响应: ${JSON.stringify(addData)}`)
+                          
+                          // 再次查询数据库状态
+                          const afterResponse = await fetch(`/api/test-student?studentId=${jinFuxin.id}`)
+                          const afterData = await afterResponse.json()
+                          addLog(`加分后数据库状态: ${afterData.student.totalScore}`)
+                          
+                          if (afterData.student.totalScore > beforeData.student.totalScore) {
+                            addLog('✅ 加分操作成功')
+                          } else {
+                            addLog('❌ 加分操作失败，数据库分数未增加')
+                          }
+                        } else {
+                          addLog(`加分操作失败: ${addResponse.status}`)
+                        }
+                      } catch (error) {
+                        addLog(`测试失败: ${error}`)
+                      }
+                    }
+                  }}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                >
+                  测试加分
                 </button>
               </div>
             </div>
