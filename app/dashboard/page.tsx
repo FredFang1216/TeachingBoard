@@ -112,11 +112,50 @@ export default function DashboardPage() {
     loadUserAndData()
   }, [router])
 
-  const handleAddScore = (student: Student, points: number) => {
-    setSelectedStudent(student)
-    setScorePoints(Math.abs(points))
-    setScoreReason('')
-    setShowScoreModal(true)
+  const handleAddScore = async (student: Student, points: number, reason?: string) => {
+    if (reason) {
+      // 直接加分，不需要弹窗
+      try {
+        const response = await fetch('/api/score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId: student.id,
+            points: points,
+            reason: reason
+          })
+        })
+
+        if (response.ok) {
+          toast.success(`已为 ${student.name} 加分 ${points} 分`)
+          // 重新加载数据
+          if (currentUser) {
+            const groupsResponse = await fetch(`/api/groups?teacherId=${currentUser.id}`)
+            if (groupsResponse.ok) {
+              const groupsData = await groupsResponse.json()
+              setGroups(groupsData.groups || [])
+              if (selectedGroup) {
+                const updatedGroup = groupsData.groups.find((g: Group) => g.id === selectedGroup.id)
+                if (updatedGroup) {
+                  setSelectedGroup(updatedGroup)
+                }
+              }
+            }
+          }
+        } else {
+          const errorData = await response.json()
+          toast.error(errorData.message || '加分失败')
+        }
+      } catch (error) {
+        toast.error('网络错误，请重试')
+      }
+    } else {
+      // 自定义加分，需要弹窗
+      setSelectedStudent(student)
+      setScorePoints(Math.abs(points))
+      setScoreReason('')
+      setShowScoreModal(true)
+    }
   }
 
   const confirmScore = async () => {
@@ -377,42 +416,36 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
-                          onClick={() => handleAddScore(student, 1)}
-                          className="btn-success"
+                          onClick={() => handleAddScore(student, 3, '屈膝缓冲 降低重心')}
+                          className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
                         >
-                          +1
+                          屈膝缓冲 +3
                         </button>
                         <button
-                          onClick={() => handleAddScore(student, 5)}
-                          className="btn-success"
+                          onClick={() => handleAddScore(student, 2, '合作互助')}
+                          className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
                         >
-                          +5
+                          合作互助 +2
                         </button>
                         <button
-                          onClick={() => handleAddScore(student, 10)}
-                          className="btn-success"
+                          onClick={() => handleAddScore(student, 1, '认真学练')}
+                          className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm font-medium"
                         >
-                          +10
+                          认真学练 +1
                         </button>
                         <button
-                          onClick={() => handleAddScore(student, -1)}
-                          className="btn-danger"
+                          onClick={() => handleAddScore(student, 1, '大胆尝试')}
+                          className="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium"
                         >
-                          -1
+                          大胆尝试 +1
                         </button>
                         <button
-                          onClick={() => handleAddScore(student, -5)}
-                          className="btn-danger"
+                          onClick={() => setSelectedStudent(student); setScorePoints(1); setShowScoreModal(true)}
+                          className="px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
                         >
-                          -5
-                        </button>
-                        <button
-                          onClick={() => handleAddScore(student, -10)}
-                          className="btn-danger"
-                        >
-                          -10
+                          自定义
                         </button>
                       </div>
                     </div>
@@ -432,7 +465,7 @@ export default function DashboardPage() {
               className="bg-white rounded-2xl p-6 w-full max-w-md"
             >
               <h3 className="text-xl font-bold text-gray-800 mb-4">
-                为 {selectedStudent.name} {scorePoints > 0 ? '加分' : '减分'}
+                为 {selectedStudent.name} 加分
               </h3>
               
               <div className="space-y-4">
@@ -443,7 +476,7 @@ export default function DashboardPage() {
                   <input
                     type="number"
                     value={scorePoints}
-                    onChange={(e) => setScorePoints(parseInt(e.target.value) || 0)}
+                    onChange={(e) => setScorePoints(Math.max(1, parseInt(e.target.value) || 1))}
                     className="input-field"
                     min="1"
                   />

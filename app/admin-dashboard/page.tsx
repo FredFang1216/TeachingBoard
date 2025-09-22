@@ -210,7 +210,7 @@ export default function AdminDashboardPage() {
       })
 
       if (response.ok) {
-        toast.success('积分更新成功')
+        toast.success(`已加分 ${points} 分`)
         
         // 重新加载数据
         const groupsResponse = await fetch('/api/admin/groups-with-students')
@@ -438,7 +438,31 @@ export default function AdminDashboardPage() {
                         <p className="text-sm text-gray-500">积分</p>
                       </div>
                       
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleUpdateScore(student.id, 3, '屈膝缓冲 降低重心')}
+                          className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                        >
+                          屈膝缓冲 +3
+                        </button>
+                        <button
+                          onClick={() => handleUpdateScore(student.id, 2, '合作互助')}
+                          className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+                        >
+                          合作互助 +2
+                        </button>
+                        <button
+                          onClick={() => handleUpdateScore(student.id, 1, '认真学练')}
+                          className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm font-medium"
+                        >
+                          认真学练 +1
+                        </button>
+                        <button
+                          onClick={() => handleUpdateScore(student.id, 1, '大胆尝试')}
+                          className="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium"
+                        >
+                          大胆尝试 +1
+                        </button>
                         <button
                           onClick={() => {
                             const points = prompt('请输入要增加的积分:')
@@ -447,21 +471,9 @@ export default function AdminDashboardPage() {
                               handleUpdateScore(student.id, parseInt(points), reason)
                             }
                           }}
-                          className="px-3 py-1 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
+                          className="px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
                         >
-                          +积分
-                        </button>
-                        <button
-                          onClick={() => {
-                            const points = prompt('请输入要减少的积分:')
-                            const reason = prompt('请输入减分原因:')
-                            if (points && reason) {
-                              handleUpdateScore(student.id, -parseInt(points), reason)
-                            }
-                          }}
-                          className="px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                        >
-                          -积分
+                          自定义
                         </button>
                       </div>
                     </div>
