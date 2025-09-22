@@ -62,6 +62,7 @@ export default function AdminDashboardPage() {
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
   const [showAddStudent, setShowAddStudent] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+  const [refreshing, setRefreshing] = useState(false)
   const [newStudent, setNewStudent] = useState({
     name: '',
     height: '',
@@ -84,9 +85,15 @@ export default function AdminDashboardPage() {
 
   // 刷新数据函数
   const refreshData = async () => {
+    if (refreshing) return // 防止重复刷新
+    
+    setRefreshing(true)
     try {
+      // 添加时间戳防止缓存
+      const timestamp = Date.now()
+      
       // 加载所有班级及其学生
-      const groupsResponse = await fetch('/api/admin/groups-with-students')
+      const groupsResponse = await fetch(`/api/admin/groups-with-students?t=${timestamp}`)
       if (groupsResponse.ok) {
         const groupsData = await groupsResponse.json()
         setAllGroups(groupsData.groups || [])
@@ -104,9 +111,13 @@ export default function AdminDashboardPage() {
         })
         setAllStudents(students)
         setLastRefresh(new Date())
+        toast.success('数据已刷新')
       }
     } catch (error) {
       console.error('刷新数据失败:', error)
+      toast.error('刷新数据失败')
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -306,9 +317,21 @@ export default function AdminDashboardPage() {
             <div className="text-right">
               <button
                 onClick={refreshData}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-2"
+                disabled={refreshing}
+                className={`px-4 py-2 rounded-lg transition-colors mb-2 ${
+                  refreshing 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-500 hover:bg-blue-600'
+                } text-white`}
               >
-                手动刷新
+                {refreshing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
+                    刷新中...
+                  </>
+                ) : (
+                  '手动刷新'
+                )}
               </button>
               <p className="text-sm text-gray-500">
                 最后更新: {lastRefresh.toLocaleTimeString()}

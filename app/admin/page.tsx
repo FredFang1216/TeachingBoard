@@ -57,6 +57,8 @@ export default function AdminPage() {
   })
   const [activeTab, setActiveTab] = useState<'teachers' | 'groups' | 'overview'>('overview')
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+  const [refreshing, setRefreshing] = useState(false)
+  const [quickRefresh, setQuickRefresh] = useState(false)
 
   const handleLogout = () => {
     localStorage.removeItem('user')
@@ -66,25 +68,58 @@ export default function AdminPage() {
   }
 
   // 刷新数据函数
-  const refreshData = async () => {
+  const refreshData = async (quick = false) => {
+    if (refreshing) return // 防止重复刷新
+    
+    setRefreshing(true)
+    setQuickRefresh(quick)
     try {
-      // 加载所有教师
-      const teachersResponse = await fetch('/api/admin/teachers')
-      if (teachersResponse.ok) {
-        const teachersData = await teachersResponse.json()
-        setTeachers(teachersData.teachers || [])
-      }
+      // 添加时间戳防止缓存
+      const timestamp = Date.now()
       
-      // 加载所有班级
-      const groupsResponse = await fetch('/api/admin/groups')
-      if (groupsResponse.ok) {
-        const groupsData = await groupsResponse.json()
-        setAllGroups(groupsData.groups || [])
+      if (quick) {
+        // 快速刷新：只刷新当前标签页的数据
+        if (activeTab === 'teachers') {
+          const teachersResponse = await fetch(`/api/admin/teachers?t=${timestamp}`)
+          if (teachersResponse.ok) {
+            const teachersData = await teachersResponse.json()
+            setTeachers(teachersData.teachers || [])
+          }
+        } else if (activeTab === 'groups') {
+          const groupsResponse = await fetch(`/api/admin/groups?t=${timestamp}`)
+          if (groupsResponse.ok) {
+            const groupsData = await groupsResponse.json()
+            setAllGroups(groupsData.groups || [])
+          }
+        }
+      } else {
+        // 完整刷新：并行加载所有数据
+        const [teachersResponse, groupsResponse] = await Promise.all([
+          fetch(`/api/admin/teachers?t=${timestamp}`),
+          fetch(`/api/admin/groups?t=${timestamp}`)
+        ])
+        
+        // 处理教师数据
+        if (teachersResponse.ok) {
+          const teachersData = await teachersResponse.json()
+          setTeachers(teachersData.teachers || [])
+        }
+        
+        // 处理班级数据
+        if (groupsResponse.ok) {
+          const groupsData = await groupsResponse.json()
+          setAllGroups(groupsData.groups || [])
+        }
       }
       
       setLastRefresh(new Date())
+      toast.success(quick ? '快速刷新完成' : '数据已刷新')
     } catch (error) {
       console.error('刷新数据失败:', error)
+      toast.error('刷新数据失败')
+    } finally {
+      setRefreshing(false)
+      setQuickRefresh(false)
     }
   }
 
@@ -235,12 +270,44 @@ export default function AdminPage() {
               <p className="text-gray-600">管理教师账户和查看所有班级数据</p>
             </div>
             <div className="text-right">
-              <button
-                onClick={refreshData}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-2"
-              >
-                手动刷新
-              </button>
+              <div className="flex space-x-2 mb-2">
+                <button
+                  onClick={() => refreshData(true)}
+                  disabled={refreshing}
+                  className={`px-3 py-2 rounded-lg transition-colors text-sm ${
+                    refreshing 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-green-500 hover:bg-green-600'
+                  } text-white`}
+                >
+                  {refreshing && quickRefresh ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1 inline"></div>
+                      快速刷新中...
+                    </>
+                  ) : (
+                    '快速刷新'
+                  )}
+                </button>
+                <button
+                  onClick={() => refreshData(false)}
+                  disabled={refreshing}
+                  className={`px-3 py-2 rounded-lg transition-colors text-sm ${
+                    refreshing 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white`}
+                >
+                  {refreshing && !quickRefresh ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1 inline"></div>
+                      完整刷新中...
+                    </>
+                  ) : (
+                    '完整刷新'
+                  )}
+                </button>
+              </div>
               <p className="text-sm text-gray-500">
                 最后更新: {lastRefresh.toLocaleTimeString()}
               </p>
