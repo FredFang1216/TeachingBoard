@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,59 +35,49 @@ export async function GET(request: NextRequest) {
     })
     console.log(`[${timestamp}] 直接查询金富欣状态:`, jinFuxinData)
     
-    // 先尝试简单的Prisma查询，确保能获取数据
+    // 分离查询，避免 include 带来的潜在缓存与延迟
     const groups = await prisma.group.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        createdAt: true,
         teacher: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        students: {
-          orderBy: { totalScore: 'desc' }
+          select: { id: true, name: true, email: true }
         }
       },
       orderBy: { createdAt: 'desc' }
     })
-    
-    console.log(`[${timestamp}] Prisma查询完成，班级数: ${groups.length}`)
-    
-    // 强制刷新每个学生的数据，确保获取最新分数
-    for (const group of groups) {
-      for (const student of group.students) {
-        // 重新查询每个学生的最新数据
-        const freshStudent = await prisma.student.findUnique({
-          where: { id: student.id },
-          select: {
-            id: true,
-            name: true,
-            totalScore: true,
-            height: true,
-            weight: true,
-            vitalCapacity: true,
-            sitAndReach: true,
-            run50m: true,
-            ropeSkipping: true,
-            heartRate: true,
-            singleLegStand: true,
-            groupId: true,
-            createdAt: true,
-            updatedAt: true
-          }
-        })
-        
-        if (freshStudent) {
-          // 更新学生数据
-          Object.assign(student, freshStudent)
-          console.log(`[${timestamp}] 更新学生 ${student.name} 分数: ${freshStudent.totalScore}`)
-        }
-      }
-    }
+
+    const students = await prisma.student.findMany({
+      select: {
+        id: true,
+        name: true,
+        totalScore: true,
+        height: true,
+        weight: true,
+        vitalCapacity: true,
+        sitAndReach: true,
+        run50m: true,
+        ropeSkipping: true,
+        heartRate: true,
+        singleLegStand: true,
+        groupId: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { totalScore: 'desc' }
+    })
+
+    const groupsWithStudents = groups.map(g => ({
+      ...g,
+      students: students.filter(s => s.groupId === g.id)
+    }))
+
+    console.log(`[${timestamp}] Prisma查询完成，班级数: ${groupsWithStudents.length}，学生数: ${students.length}`)
     
     // 特别检查金富欣的数据
-    const jinFuxinInGroups = groups.flatMap(g => g.students).find(s => s.name === '金富欣')
+    const jinFuxinInGroups = groupsWithStudents.flatMap(g => g.students).find((s: any) => s.name === '金富欣')
     if (jinFuxinInGroups) {
       console.log(`[${timestamp}] Prisma查询中的金富欣:`, {
         name: jinFuxinInGroups.name,
@@ -95,8 +89,8 @@ export async function GET(request: NextRequest) {
     }
     
     // 添加调试日志
-    console.log(`[${timestamp}] 查询到的班级数: ${groups.length}`)
-    groups.forEach(group => {
+    console.log(`[${timestamp}] 查询到的班级数: ${groupsWithStudents.length}`)
+    groupsWithStudents.forEach(group => {
       console.log(`[${timestamp}] 班级 ${group.name} 有 ${group.students.length} 个学生`)
       group.students.forEach((student: any) => {
         console.log(`[${timestamp}] 学生 ${student.name} 分数: ${student.totalScore}`)
@@ -106,7 +100,7 @@ export async function GET(request: NextRequest) {
     console.log(`[${timestamp}] 查询完成，班级数: ${groups.length}`)
     
     // 格式化数据
-    const formattedGroups = groups.map(group => ({
+    const formattedGroups = groupsWithStudents.map(group => ({
       id: group.id,
       name: group.name,
       description: group.description || '',
