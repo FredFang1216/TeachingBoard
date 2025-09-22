@@ -520,7 +520,7 @@ export default function AdminDashboardPage() {
                         const jinFuxin = data.jinFuxin
                         if (jinFuxin) {
                           const recentRecords = jinFuxin.scoreRecords.slice(0, 3)
-                          const recordsText = recentRecords.map(r => 
+                          const recordsText = recentRecords.map((r: any) => 
                             `${r.points > 0 ? '+' : ''}${r.points}分 (${r.reason}) - ${new Date(r.createdAt).toLocaleTimeString()}`
                           ).join('\n')
                           
