@@ -59,6 +59,11 @@ export async function POST(request: NextRequest) {
     
     const { scoreRecord, updatedStudent } = result
     console.log('事务结果:', { scoreRecord, updatedStudent })
+    
+    // 强制刷新连接，确保数据立即生效
+    await prisma.$disconnect()
+    await prisma.$connect()
+    console.log('加分后强制刷新数据库连接')
 
     return NextResponse.json({
       message: '积分更新成功',

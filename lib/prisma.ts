@@ -11,6 +11,10 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
     db: {
       url: process.env.DATABASE_URL
     }
+  },
+  // 强制每次查询都获取最新数据
+  transactionOptions: {
+    isolationLevel: 'ReadCommitted'
   }
 })
 

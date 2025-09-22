@@ -490,6 +490,25 @@ export default function AdminDashboardPage() {
                 >
                   强制同步
                 </button>
+                <button
+                  onClick={async () => {
+                    console.log('测试数据同步...')
+                    try {
+                      const response = await fetch('/api/test-sync')
+                      if (response.ok) {
+                        const data = await response.json()
+                        console.log('测试同步结果:', data)
+                        alert(`测试同步完成！\n时间戳: ${data.timestamp}\n学生数: ${data.students.length}\n金富欣分数: ${data.jinFuxin?.totalScore || '未找到'}`)
+                      }
+                    } catch (error) {
+                      console.error('测试同步失败:', error)
+                      alert('测试同步失败')
+                    }
+                  }}
+                  className="px-3 py-2 rounded-lg transition-colors text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  测试同步
+                </button>
               </div>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>

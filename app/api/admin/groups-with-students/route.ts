@@ -17,6 +17,9 @@ export async function GET(request: NextRequest) {
     await prisma.$connect()
     console.log(`[${timestamp}] Prisma客户端重新连接完成`)
     
+    // 等待一小段时间确保连接稳定
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
     // 先直接查询金富欣的当前状态
     const jinFuxinData = await prisma.student.findFirst({
       where: { name: '金富欣' },
