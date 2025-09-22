@@ -31,44 +31,91 @@ export async function GET(request: NextRequest) {
     })
     console.log(`[${timestamp}] 直接查询金富欣状态:`, jinFuxinData)
     
-    // 获取所有班级及其学生和教师信息，强制刷新避免缓存
-    const groups = await prisma.group.findMany({
-      include: {
-        teacher: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        students: {
-          orderBy: { totalScore: 'desc' }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+    // 使用原始SQL查询绕过Prisma缓存，确保获取最新数据
+    const groupsRaw = await prisma.$queryRaw`
+      SELECT 
+        g.id as group_id,
+        g.name as group_name,
+        g.description as group_description,
+        g."createdAt" as group_created_at,
+        u.id as teacher_id,
+        u.name as teacher_name,
+        u.email as teacher_email,
+        s.id as student_id,
+        s.name as student_name,
+        s."totalScore" as student_total_score,
+        s.height as student_height,
+        s.weight as student_weight,
+        s."vitalCapacity" as student_vital_capacity,
+        s."sitAndReach" as student_sit_and_reach,
+        s."run50m" as student_run_50m,
+        s."ropeSkipping" as student_rope_skipping,
+        s."heartRate" as student_heart_rate,
+        s."singleLegStand" as student_single_leg_stand,
+        s."groupId" as student_group_id,
+        s."createdAt" as student_created_at,
+        s."updatedAt" as student_updated_at
+      FROM "Group" g
+      LEFT JOIN "User" u ON g."teacherId" = u.id
+      LEFT JOIN "Student" s ON g.id = s."groupId"
+      ORDER BY g."createdAt" DESC, s."totalScore" DESC
+    ` as any[]
     
-    // 强制刷新每个学生的数据，确保获取最新分数
-    for (const group of groups) {
-      for (const student of group.students) {
-        // 重新查询每个学生的最新数据
-        const freshStudent = await prisma.student.findUnique({
-          where: { id: student.id },
-          select: {
-            id: true,
-            name: true,
-            totalScore: true,
-            updatedAt: true
-          }
+    console.log(`[${timestamp}] 原始SQL查询完成，记录数: ${groupsRaw.length}`)
+    
+    // 将原始SQL结果转换为结构化数据
+    const groupsMap = new Map()
+    
+    for (const row of groupsRaw) {
+      const groupId = row.group_id
+      
+      if (!groupsMap.has(groupId)) {
+        groupsMap.set(groupId, {
+          id: groupId,
+          name: row.group_name,
+          description: row.group_description || '',
+          createdAt: new Date(row.group_created_at),
+          teacher: {
+            id: row.teacher_id,
+            name: row.teacher_name,
+            email: row.teacher_email
+          },
+          students: []
         })
-        
-        if (freshStudent) {
-          // 更新学生数据
-          student.totalScore = freshStudent.totalScore
-          student.updatedAt = freshStudent.updatedAt
-          console.log(`[${timestamp}] 更新学生 ${student.name} 分数: ${freshStudent.totalScore}`)
-        }
       }
+      
+      if (row.student_id) {
+        groupsMap.get(groupId).students.push({
+          id: row.student_id,
+          name: row.student_name,
+          totalScore: Number(row.student_total_score) || 0,
+          height: row.student_height,
+          weight: row.student_weight,
+          vitalCapacity: row.student_vital_capacity,
+          sitAndReach: row.student_sit_and_reach,
+          run50m: row.student_run_50m,
+          ropeSkipping: row.student_rope_skipping,
+          heartRate: row.student_heart_rate,
+          singleLegStand: row.student_single_leg_stand,
+          groupId: row.student_group_id,
+          createdAt: new Date(row.student_created_at),
+          updatedAt: new Date(row.student_updated_at)
+        })
+      }
+    }
+    
+    const groups = Array.from(groupsMap.values())
+    
+    // 特别检查金富欣的数据
+    const jinFuxinInGroups = groups.flatMap(g => g.students).find(s => s.name === '金富欣')
+    if (jinFuxinInGroups) {
+      console.log(`[${timestamp}] 原始SQL查询中的金富欣:`, {
+        name: jinFuxinInGroups.name,
+        totalScore: jinFuxinInGroups.totalScore,
+        updatedAt: jinFuxinInGroups.updatedAt
+      })
+    } else {
+      console.log(`[${timestamp}] 原始SQL查询中未找到金富欣`)
     }
     
     // 添加调试日志
@@ -109,6 +156,17 @@ export async function GET(request: NextRequest) {
         createdAt: student.createdAt.toISOString()
       }))
     }))
+    
+    // 特别检查金富欣在格式化数据中的状态
+    const jinFuxinFormatted = formattedGroups.flatMap(g => g.students).find(s => s.name === '金富欣')
+    if (jinFuxinFormatted) {
+      console.log(`[${timestamp}] 格式化数据中的金富欣:`, {
+        name: jinFuxinFormatted.name,
+        totalScore: jinFuxinFormatted.totalScore
+      })
+    } else {
+      console.log(`[${timestamp}] 格式化数据中未找到金富欣`)
+    }
     
     // 添加调试日志
     console.log('API返回的学生数据:', formattedGroups.map(g => ({
