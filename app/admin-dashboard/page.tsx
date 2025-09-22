@@ -101,6 +101,10 @@ export default function AdminDashboardPage() {
         
         setCurrentUser(user)
         
+        // 检查URL参数中是否有指定的班级ID
+        const urlParams = new URLSearchParams(window.location.search)
+        const groupId = urlParams.get('groupId')
+        
         // 加载所有班级及其学生
         const groupsResponse = await fetch('/api/admin/groups-with-students')
         if (groupsResponse.ok) {
@@ -119,6 +123,11 @@ export default function AdminDashboardPage() {
             })
           })
           setAllStudents(students)
+          
+          // 如果URL中指定了班级ID，则设置筛选
+          if (groupId) {
+            setSelectedGroup(groupId)
+          }
         }
       } catch (error) {
         console.error('加载数据失败:', error)

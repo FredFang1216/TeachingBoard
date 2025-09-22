@@ -179,6 +179,33 @@ export default function AdminPage() {
     }
   }
 
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!confirm('确定要删除这个班级吗？这将同时删除该班级的所有学生数据。')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/groups/${groupId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        toast.success('班级删除成功')
+        // 重新加载数据
+        const groupsResponse = await fetch('/api/admin/groups')
+        if (groupsResponse.ok) {
+          const groupsData = await groupsResponse.json()
+          setAllGroups(groupsData.groups || [])
+        }
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.message || '删除班级失败')
+      }
+    } catch (error) {
+      toast.error('网络错误，请重试')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -405,13 +432,21 @@ export default function AdminPage() {
                             {group.studentCount}名学生 • 创建于 {new Date(group.createdAt).toLocaleDateString()}
                           </p>
                         </div>
-                        <button
-                          onClick={() => router.push(`/dashboard?groupId=${group.id}`)}
-                          className="btn-primary"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          查看详情
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => router.push(`/admin-dashboard?groupId=${group.id}`)}
+                            className="btn-primary"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            查看详情
+                          </button>
+                          <button
+                            onClick={() => handleDeleteGroup(group.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
