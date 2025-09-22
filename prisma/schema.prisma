@@ -43,7 +43,12 @@ model Student {
   name        String
   height      Float?   // 身高 (cm)
   weight      Float?   // 体重 (kg)
+  vitalCapacity Float? // 肺活量 (ml)
+  sitAndReach Float?   // 坐位体前屈 (cm)
+  run50m      Float?   // 50米跑 (秒)
+  ropeSkipping Int?    // 跳绳 (次)
   heartRate   Int?     // 心率 (bpm)
+  singleLegStand Float? // 单脚站立时间 (秒)
   totalScore  Int      @default(0)
   groupId     String
   createdAt   DateTime @default(now())

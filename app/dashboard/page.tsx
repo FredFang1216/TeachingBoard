@@ -23,7 +23,12 @@ interface Student {
   name: string
   height?: number
   weight?: number
+  vitalCapacity?: number
+  sitAndReach?: number
+  run50m?: number
+  ropeSkipping?: number
   heartRate?: number
+  singleLegStand?: number
   totalScore: number
   scoreRecords: ScoreRecord[]
 }
@@ -61,7 +66,12 @@ export default function DashboardPage() {
     name: '',
     height: '',
     weight: '',
-    heartRate: ''
+    vitalCapacity: '',
+    sitAndReach: '',
+    run50m: '',
+    ropeSkipping: '',
+    heartRate: '',
+    singleLegStand: ''
   })
 
   const handleLogout = () => {
@@ -274,14 +284,29 @@ export default function DashboardPage() {
           name: newStudent.name,
           height: newStudent.height ? parseFloat(newStudent.height) : null,
           weight: newStudent.weight ? parseFloat(newStudent.weight) : null,
+          vitalCapacity: newStudent.vitalCapacity ? parseFloat(newStudent.vitalCapacity) : null,
+          sitAndReach: newStudent.sitAndReach ? parseFloat(newStudent.sitAndReach) : null,
+          run50m: newStudent.run50m ? parseFloat(newStudent.run50m) : null,
+          ropeSkipping: newStudent.ropeSkipping ? parseInt(newStudent.ropeSkipping) : null,
           heartRate: newStudent.heartRate ? parseInt(newStudent.heartRate) : null,
+          singleLegStand: newStudent.singleLegStand ? parseFloat(newStudent.singleLegStand) : null,
           groupId: selectedGroup.id
         })
       })
 
       if (response.ok) {
         toast.success('学生添加成功')
-        setNewStudent({ name: '', height: '', weight: '', heartRate: '' })
+        setNewStudent({ 
+          name: '', 
+          height: '', 
+          weight: '', 
+          vitalCapacity: '',
+          sitAndReach: '',
+          run50m: '',
+          ropeSkipping: '',
+          heartRate: '',
+          singleLegStand: ''
+        })
         setShowAddStudentForm(false)
         
         // 重新加载班级数据
@@ -405,10 +430,15 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <h4 className="text-lg font-bold text-gray-800">{student.name}</h4>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                           {student.height && <span>身高: {student.height}cm</span>}
                           {student.weight && <span>体重: {student.weight}kg</span>}
+                          {student.vitalCapacity && <span>肺活量: {student.vitalCapacity}ml</span>}
+                          {student.sitAndReach && <span>坐位体前屈: {student.sitAndReach}cm</span>}
+                          {student.run50m && <span>50米跑: {student.run50m}秒</span>}
+                          {student.ropeSkipping && <span>跳绳: {student.ropeSkipping}次</span>}
                           {student.heartRate && <span>心率: {student.heartRate}bpm</span>}
+                          {student.singleLegStand && <span>单脚站立: {student.singleLegStand}秒</span>}
                         </div>
                       </div>
                     </div>
@@ -632,17 +662,90 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    心率 (bpm)
-                  </label>
-                  <input
-                    type="number"
-                    value={newStudent.heartRate}
-                    onChange={(e) => setNewStudent({...newStudent, heartRate: e.target.value})}
-                    className="input-field"
-                    placeholder="80"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      肺活量 (ml)
+                    </label>
+                    <input
+                      type="number"
+                      value={newStudent.vitalCapacity}
+                      onChange={(e) => setNewStudent({...newStudent, vitalCapacity: e.target.value})}
+                      className="input-field"
+                      placeholder="2000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      坐位体前屈 (cm)
+                    </label>
+                    <input
+                      type="number"
+                      value={newStudent.sitAndReach}
+                      onChange={(e) => setNewStudent({...newStudent, sitAndReach: e.target.value})}
+                      className="input-field"
+                      placeholder="15"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      50米跑 (秒)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={newStudent.run50m}
+                      onChange={(e) => setNewStudent({...newStudent, run50m: e.target.value})}
+                      className="input-field"
+                      placeholder="8.5"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      跳绳 (次)
+                    </label>
+                    <input
+                      type="number"
+                      value={newStudent.ropeSkipping}
+                      onChange={(e) => setNewStudent({...newStudent, ropeSkipping: e.target.value})}
+                      className="input-field"
+                      placeholder="100"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      心率 (bpm)
+                    </label>
+                    <input
+                      type="number"
+                      value={newStudent.heartRate}
+                      onChange={(e) => setNewStudent({...newStudent, heartRate: e.target.value})}
+                      className="input-field"
+                      placeholder="80"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      单脚站立时间 (秒)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={newStudent.singleLegStand}
+                      onChange={(e) => setNewStudent({...newStudent, singleLegStand: e.target.value})}
+                      className="input-field"
+                      placeholder="30"
+                    />
+                  </div>
                 </div>
               </div>
               

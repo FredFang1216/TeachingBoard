@@ -2,7 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, height, weight, heartRate, groupId } = await request.json()
+    const { 
+      name, 
+      height, 
+      weight, 
+      vitalCapacity,
+      sitAndReach,
+      run50m,
+      ropeSkipping,
+      heartRate, 
+      singleLegStand,
+      groupId 
+    } = await request.json()
 
     if (!name || !groupId) {
       return NextResponse.json(
@@ -19,7 +30,12 @@ export async function POST(request: NextRequest) {
         name,
         height: height ? parseFloat(height) : null,
         weight: weight ? parseFloat(weight) : null,
+        vitalCapacity: vitalCapacity ? parseFloat(vitalCapacity) : null,
+        sitAndReach: sitAndReach ? parseFloat(sitAndReach) : null,
+        run50m: run50m ? parseFloat(run50m) : null,
+        ropeSkipping: ropeSkipping ? parseInt(ropeSkipping) : null,
         heartRate: heartRate ? parseInt(heartRate) : null,
+        singleLegStand: singleLegStand ? parseFloat(singleLegStand) : null,
         groupId,
       },
     })
