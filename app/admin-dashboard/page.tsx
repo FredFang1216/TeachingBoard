@@ -538,6 +538,25 @@ export default function AdminDashboardPage() {
                 >
                   跨账户测试
                 </button>
+                <button
+                  onClick={async () => {
+                    console.log('测试数据库同步...')
+                    try {
+                      const response = await fetch('/api/test-db-sync')
+                      if (response.ok) {
+                        const data = await response.json()
+                        console.log('数据库同步结果:', data)
+                        alert(`数据库同步测试完成！\n\n加分前: ${data.before?.totalScore}分\n加分后: ${data.after?.totalScore}分\n同步状态: ${data.isSynced ? '正常' : '异常'}\n\n${data.message}`)
+                      }
+                    } catch (error) {
+                      console.error('数据库同步测试失败:', error)
+                      alert('数据库同步测试失败')
+                    }
+                  }}
+                  className="px-3 py-2 rounded-lg transition-colors text-sm bg-pink-500 hover:bg-pink-600 text-white"
+                >
+                  数据库测试
+                </button>
               </div>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>

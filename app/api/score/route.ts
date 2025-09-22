@@ -55,6 +55,9 @@ export async function POST(request: NextRequest) {
       console.log('事务处理完成')
       
       return { scoreRecord, updatedStudent }
+    }, {
+      isolationLevel: 'ReadCommitted',
+      timeout: 10000 // 10秒超时
     })
     
     const { scoreRecord, updatedStudent } = result
