@@ -97,6 +97,17 @@ export default function DebugAdminPage() {
         addLog(`设置新状态前，当前状态中的金富欣分数: ${students.find(s => s.name === '金富欣')?.totalScore || '未找到'}`)
         addLog(`即将设置的新状态中金富欣分数: ${allStudents.find(s => s.name === '金富欣')?.totalScore || '未找到'}`)
         
+        // 检查是否有本地加分未同步到服务器
+        const now = Date.now()
+        const timeSinceLastScoreUpdate = now - lastScoreUpdate
+        const hasRecentLocalUpdate = timeSinceLastScoreUpdate < 10000 // 10秒内有本地更新
+        
+        if (hasRecentLocalUpdate) {
+          addLog(`⚠️ 检测到最近有本地加分操作（${Math.round(timeSinceLastScoreUpdate/1000)}秒前），跳过服务器数据覆盖`)
+          addLog('保持本地状态，避免覆盖加分结果')
+          return
+        }
+        
         setStudents(allStudents)
         addLog('学生数据设置完成')
       } else {
@@ -159,11 +170,11 @@ export default function DebugAdminPage() {
         
         toast.success(`已加分 ${points} 分`)
         
-        // 延迟刷新服务器数据，但等待更长时间
-        setTimeout(() => {
-          addLog('延迟刷新服务器数据...')
-          loadStudents()
-        }, 3000) // 改为3秒，给服务器更多时间
+        // 不进行延迟刷新，避免覆盖本地状态
+        // setTimeout(() => {
+        //   addLog('延迟刷新服务器数据...')
+        //   loadStudents()
+        // }, 3000) // 改为3秒，给服务器更多时间
         
       } else {
         const errorData = await response.json()
@@ -308,6 +319,17 @@ export default function DebugAdminPage() {
                   className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
                 >
                   清空日志
+                </button>
+                
+                <button
+                  onClick={() => {
+                    addLog('强制同步服务器数据...')
+                    setLastScoreUpdate(0) // 重置加分时间，强制同步
+                    loadStudents()
+                  }}
+                  className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+                >
+                  强制同步
                 </button>
                 
                 <button
