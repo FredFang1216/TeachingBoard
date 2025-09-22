@@ -56,12 +56,36 @@ export default function AdminPage() {
     password: ''
   })
   const [activeTab, setActiveTab] = useState<'teachers' | 'groups' | 'overview'>('overview')
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
   const handleLogout = () => {
     localStorage.removeItem('user')
     sessionStorage.clear()
     toast.success('已成功退出登录')
     router.push('/login')
+  }
+
+  // 刷新数据函数
+  const refreshData = async () => {
+    try {
+      // 加载所有教师
+      const teachersResponse = await fetch('/api/admin/teachers')
+      if (teachersResponse.ok) {
+        const teachersData = await teachersResponse.json()
+        setTeachers(teachersData.teachers || [])
+      }
+      
+      // 加载所有班级
+      const groupsResponse = await fetch('/api/admin/groups')
+      if (groupsResponse.ok) {
+        const groupsData = await groupsResponse.json()
+        setAllGroups(groupsData.groups || [])
+      }
+      
+      setLastRefresh(new Date())
+    } catch (error) {
+      console.error('刷新数据失败:', error)
+    }
   }
 
   // 加载数据
@@ -84,19 +108,8 @@ export default function AdminPage() {
         
         setCurrentUser(user)
         
-        // 加载所有教师
-        const teachersResponse = await fetch('/api/admin/teachers')
-        if (teachersResponse.ok) {
-          const teachersData = await teachersResponse.json()
-          setTeachers(teachersData.teachers || [])
-        }
-        
-        // 加载所有班级
-        const groupsResponse = await fetch('/api/admin/groups')
-        if (groupsResponse.ok) {
-          const groupsData = await groupsResponse.json()
-          setAllGroups(groupsData.groups || [])
-        }
+        // 使用统一的刷新函数
+        await refreshData()
       } catch (error) {
         console.error('加载数据失败:', error)
         toast.error('加载数据失败')
@@ -107,6 +120,15 @@ export default function AdminPage() {
     
     loadData()
   }, [router])
+
+  // 自动刷新数据
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshData()
+    }, 30000) // 每30秒刷新一次
+
+    return () => clearInterval(interval)
+  }, [])
 
   const handleAddTeacher = async () => {
     if (!newTeacher.email || !newTeacher.name || !newTeacher.password) {
@@ -131,12 +153,8 @@ export default function AdminPage() {
         setNewTeacher({ email: '', name: '', password: '' })
         setShowAddTeacher(false)
         
-        // 重新加载教师列表
-        const teachersResponse = await fetch('/api/admin/teachers')
-        if (teachersResponse.ok) {
-          const teachersData = await teachersResponse.json()
-          setTeachers(teachersData.teachers || [])
-        }
+        // 立即刷新数据
+        await refreshData()
       } else {
         const errorData = await response.json()
         toast.error(errorData.message || '创建教师账户失败')
@@ -158,18 +176,8 @@ export default function AdminPage() {
 
       if (response.ok) {
         toast.success('教师账户删除成功')
-        // 重新加载数据
-        const teachersResponse = await fetch('/api/admin/teachers')
-        if (teachersResponse.ok) {
-          const teachersData = await teachersResponse.json()
-          setTeachers(teachersData.teachers || [])
-        }
-        
-        const groupsResponse = await fetch('/api/admin/groups')
-        if (groupsResponse.ok) {
-          const groupsData = await groupsResponse.json()
-          setAllGroups(groupsData.groups || [])
-        }
+        // 立即刷新数据
+        await refreshData()
       } else {
         const errorData = await response.json()
         toast.error(errorData.message || '删除教师账户失败')
@@ -191,12 +199,8 @@ export default function AdminPage() {
 
       if (response.ok) {
         toast.success('班级删除成功')
-        // 重新加载数据
-        const groupsResponse = await fetch('/api/admin/groups')
-        if (groupsResponse.ok) {
-          const groupsData = await groupsResponse.json()
-          setAllGroups(groupsData.groups || [])
-        }
+        // 立即刷新数据
+        await refreshData()
       } else {
         const errorData = await response.json()
         toast.error(errorData.message || '删除班级失败')
@@ -225,8 +229,23 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 页面标题 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">管理员控制台</h1>
-          <p className="text-gray-600">管理教师账户和查看所有班级数据</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">管理员控制台</h1>
+              <p className="text-gray-600">管理教师账户和查看所有班级数据</p>
+            </div>
+            <div className="text-right">
+              <button
+                onClick={refreshData}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-2"
+              >
+                手动刷新
+              </button>
+              <p className="text-sm text-gray-500">
+                最后更新: {lastRefresh.toLocaleTimeString()}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* 标签页 */}

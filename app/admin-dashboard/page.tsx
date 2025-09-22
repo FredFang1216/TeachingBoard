@@ -61,6 +61,7 @@ export default function AdminDashboardPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
   const [showAddStudent, setShowAddStudent] = useState(false)
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [newStudent, setNewStudent] = useState({
     name: '',
     height: '',
@@ -79,6 +80,34 @@ export default function AdminDashboardPage() {
     sessionStorage.clear()
     toast.success('已成功退出登录')
     router.push('/login')
+  }
+
+  // 刷新数据函数
+  const refreshData = async () => {
+    try {
+      // 加载所有班级及其学生
+      const groupsResponse = await fetch('/api/admin/groups-with-students')
+      if (groupsResponse.ok) {
+        const groupsData = await groupsResponse.json()
+        setAllGroups(groupsData.groups || [])
+        
+        // 展平所有学生数据，添加班级和教师信息
+        const students: Student[] = []
+        groupsData.groups.forEach((group: Group) => {
+          group.students.forEach((student: any) => {
+            students.push({
+              ...student,
+              groupName: group.name,
+              teacherName: group.teacher.name
+            })
+          })
+        })
+        setAllStudents(students)
+        setLastRefresh(new Date())
+      }
+    } catch (error) {
+      console.error('刷新数据失败:', error)
+    }
   }
 
   // 加载所有数据
@@ -105,29 +134,12 @@ export default function AdminDashboardPage() {
         const urlParams = new URLSearchParams(window.location.search)
         const groupId = urlParams.get('groupId')
         
-        // 加载所有班级及其学生
-        const groupsResponse = await fetch('/api/admin/groups-with-students')
-        if (groupsResponse.ok) {
-          const groupsData = await groupsResponse.json()
-          setAllGroups(groupsData.groups || [])
-          
-          // 展平所有学生数据，添加班级和教师信息
-          const students: Student[] = []
-          groupsData.groups.forEach((group: Group) => {
-            group.students.forEach((student: any) => {
-              students.push({
-                ...student,
-                groupName: group.name,
-                teacherName: group.teacher.name
-              })
-            })
-          })
-          setAllStudents(students)
-          
-          // 如果URL中指定了班级ID，则设置筛选
-          if (groupId) {
-            setSelectedGroup(groupId)
-          }
+        // 使用统一的刷新函数
+        await refreshData()
+        
+        // 如果URL中指定了班级ID，则设置筛选
+        if (groupId) {
+          setSelectedGroup(groupId)
         }
       } catch (error) {
         console.error('加载数据失败:', error)
@@ -139,6 +151,15 @@ export default function AdminDashboardPage() {
     
     loadData()
   }, [router])
+
+  // 自动刷新数据
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshData()
+    }, 30000) // 每30秒刷新一次
+
+    return () => clearInterval(interval)
+  }, [])
 
   // 过滤和排序学生
   const filteredStudents = allStudents
@@ -209,24 +230,8 @@ export default function AdminDashboardPage() {
         })
         setShowAddStudent(false)
         
-        // 重新加载数据
-        const groupsResponse = await fetch('/api/admin/groups-with-students')
-        if (groupsResponse.ok) {
-          const groupsData = await groupsResponse.json()
-          setAllGroups(groupsData.groups || [])
-          
-          const students: Student[] = []
-          groupsData.groups.forEach((group: Group) => {
-            group.students.forEach((student: any) => {
-              students.push({
-                ...student,
-                groupName: group.name,
-                teacherName: group.teacher.name
-              })
-            })
-          })
-          setAllStudents(students)
-        }
+        // 立即刷新数据
+        await refreshData()
       } else {
         const errorData = await response.json()
         toast.error(errorData.message || '添加学生失败')
@@ -293,8 +298,23 @@ export default function AdminDashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 页面标题 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">学生管理 - 管理员视图</h1>
-          <p className="text-gray-600">查看和管理所有班级的学生数据</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">学生管理 - 管理员视图</h1>
+              <p className="text-gray-600">查看和管理所有班级的学生数据</p>
+            </div>
+            <div className="text-right">
+              <button
+                onClick={refreshData}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-2"
+              >
+                手动刷新
+              </button>
+              <p className="text-sm text-gray-500">
+                最后更新: {lastRefresh.toLocaleTimeString()}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* 统计卡片 */}
