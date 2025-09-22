@@ -557,6 +557,25 @@ export default function AdminDashboardPage() {
                 >
                   数据库测试
                 </button>
+                <button
+                  onClick={async () => {
+                    console.log('对比API数据...')
+                    try {
+                      const response = await fetch('/api/compare-apis')
+                      if (response.ok) {
+                        const data = await response.json()
+                        console.log('API对比结果:', data)
+                        alert(`API对比测试完成！\n\n直接查询: ${data.directQuery?.totalScore}分\nGroups API: ${data.groupsApiJinFuxin?.totalScore}分\n数据一致性: ${data.isDataConsistent ? '一致' : '不一致'}\n\n时间差: ${data.timeDiff ? data.timeDiff + 'ms' : '未知'}\n\n${data.message}`)
+                      }
+                    } catch (error) {
+                      console.error('API对比测试失败:', error)
+                      alert('API对比测试失败')
+                    }
+                  }}
+                  className="px-3 py-2 rounded-lg transition-colors text-sm bg-indigo-500 hover:bg-indigo-600 text-white"
+                >
+                  API对比
+                </button>
               </div>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>

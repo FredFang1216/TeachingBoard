@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
     await prisma.$connect()
     console.log(`[${timestamp}] 数据库连接已刷新`)
     
+    // 等待一小段时间确保连接稳定
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
     // 查询金富欣的详细信息
     const jinFuxin = await prisma.student.findFirst({
       where: { name: '金富欣' },
