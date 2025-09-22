@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       students: group.students.map((student: any) => ({
         id: student.id,
         name: student.name,
-        totalScore: student.totalScore,
+        totalScore: typeof student.totalScore === 'number' ? student.totalScore : Number(student.totalScore ?? 0),
         height: student.height,
         weight: student.weight,
         vitalCapacity: student.vitalCapacity,
@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
     // 添加调试日志
     console.log('API返回的学生数据:', formattedGroups.map(g => ({
       groupName: g.name,
-      students: g.students.map((s: any) => ({ id: s.id, name: s.name, totalScore: s.totalScore }))
+      students: g.students.map((s: any) => ({ id: s.id, name: s.name, totalScore: typeof s.totalScore === 'number' ? s.totalScore : Number(s.totalScore ?? 0) }))
     })))
     
     // 特别检查金富欣的数据
