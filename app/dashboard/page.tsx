@@ -297,13 +297,6 @@ export default function DashboardPage() {
     }
   }
 
-  const sortedStudents = selectedGroup?.students.sort((a, b) => {
-    if (sortBy === 'score') {
-      return b.totalScore - a.totalScore
-    }
-    return a.name.localeCompare(b.name)
-  }) || []
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -314,6 +307,13 @@ export default function DashboardPage() {
       </div>
     )
   }
+
+  const sortedStudents = selectedGroup?.students.sort((a, b) => {
+    if (sortBy === 'score') {
+      return b.totalScore - a.totalScore
+    }
+    return a.name.localeCompare(b.name)
+  }) || []
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-blue-50">
