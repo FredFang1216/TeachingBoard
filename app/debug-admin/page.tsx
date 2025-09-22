@@ -55,7 +55,24 @@ export default function DebugAdminPage() {
         })
         
         addLog(`总共处理学生: ${allStudents.length}`)
-        console.log('所有学生数据:', allStudents)
+        console.log('API返回的原始数据:', data)
+        console.log('处理后的学生数据:', allStudents)
+        
+        // 对比当前状态和新数据
+        const currentStudentIds = students.map(s => s.id)
+        const newStudentIds = allStudents.map(s => s.id)
+        addLog(`当前学生ID: [${currentStudentIds.join(', ')}]`)
+        addLog(`新学生ID: [${newStudentIds.join(', ')}]`)
+        
+        // 检查分数变化
+        allStudents.forEach(newStudent => {
+          const currentStudent = students.find(s => s.id === newStudent.id)
+          if (currentStudent) {
+            if (currentStudent.totalScore !== newStudent.totalScore) {
+              addLog(`⚠️ 学生 ${newStudent.name} 分数变化: ${currentStudent.totalScore} → ${newStudent.totalScore}`)
+            }
+          }
+        })
         
         setStudents(allStudents)
         addLog('学生数据设置完成')
@@ -152,6 +169,35 @@ export default function DebugAdminPage() {
     }
   }
 
+  const testStudentDirect = async (studentId: string) => {
+    addLog(`直接查询学生数据库状态: ${studentId}`)
+    
+    try {
+      const response = await fetch(`/api/test-student?studentId=${studentId}`)
+      if (response.ok) {
+        const data = await response.json()
+        addLog(`直接查询结果: ${JSON.stringify(data)}`)
+        
+        // 对比前端状态
+        const frontendStudent = students.find(s => s.id === studentId)
+        if (frontendStudent) {
+          addLog(`前端状态: ${frontendStudent.name} = ${frontendStudent.totalScore}`)
+          addLog(`数据库状态: ${data.student.name} = ${data.student.totalScore}`)
+          
+          if (frontendStudent.totalScore !== data.student.totalScore) {
+            addLog(`⚠️ 前后端不一致！前端 ${frontendStudent.totalScore} ≠ 数据库 ${data.student.totalScore}`)
+          } else {
+            addLog(`✅ 前后端一致`)
+          }
+        }
+      } else {
+        addLog(`直接查询失败: ${response.status}`)
+      }
+    } catch (error) {
+      addLog(`直接查询错误: ${error}`)
+    }
+  }
+
   useEffect(() => {
     loadStudents()
   }, [])
@@ -239,6 +285,12 @@ export default function DebugAdminPage() {
                       className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600"
                     >
                       验证
+                    </button>
+                    <button
+                      onClick={() => testStudentDirect(student.id)}
+                      className="px-3 py-1 bg-orange-500 text-white rounded text-sm hover:bg-orange-600"
+                    >
+                      直接查询
                     </button>
                   </div>
                 </div>

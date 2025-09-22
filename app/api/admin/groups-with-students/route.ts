@@ -44,6 +44,12 @@ export async function GET(request: NextRequest) {
       }))
     }))
     
+    // 添加调试日志
+    console.log('API返回的学生数据:', formattedGroups.map(g => ({
+      groupName: g.name,
+      students: g.students.map(s => ({ id: s.id, name: s.name, totalScore: s.totalScore }))
+    })))
+    
     return NextResponse.json({ groups: formattedGroups })
   } catch (error) {
     console.error('Get groups with students error:', error)
