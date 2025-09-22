@@ -44,35 +44,14 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
     
-    // 强制刷新每个学生的数据，避免缓存
-    for (const group of groups) {
-      for (const student of group.students) {
-        // 重新查询每个学生的最新数据
-        const freshStudent = await prisma.student.findUnique({
-          where: { id: student.id },
-          select: {
-            id: true,
-            name: true,
-            totalScore: true,
-            height: true,
-            weight: true,
-            vitalCapacity: true,
-            sitAndReach: true,
-            run50m: true,
-            ropeSkipping: true,
-            heartRate: true,
-            singleLegStand: true,
-            groupId: true,
-            createdAt: true
-          }
-        })
-        
-        if (freshStudent) {
-          // 更新学生数据
-          Object.assign(student, freshStudent)
-        }
-      }
-    }
+    // 添加调试日志
+    console.log(`[${timestamp}] 查询到的班级数: ${groups.length}`)
+    groups.forEach(group => {
+      console.log(`[${timestamp}] 班级 ${group.name} 有 ${group.students.length} 个学生`)
+      group.students.forEach(student => {
+        console.log(`[${timestamp}] 学生 ${student.name} 分数: ${student.totalScore}`)
+      })
+    })
     
     console.log(`[${timestamp}] 查询完成，班级数: ${groups.length}`)
     

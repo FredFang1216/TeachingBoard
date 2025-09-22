@@ -45,10 +45,22 @@ export async function GET(request: NextRequest) {
     
     // 3. 从groups API中提取金富欣数据
     let groupsApiJinFuxin = null
+    console.log(`[${timestamp}] Groups API数据结构:`, {
+      hasGroups: !!groupsApiData?.groups,
+      groupsLength: groupsApiData?.groups?.length || 0,
+      groupsData: groupsApiData?.groups?.map((g: any) => ({
+        name: g.name,
+        studentsCount: g.students?.length || 0,
+        students: g.students?.map((s: any) => ({ name: s.name, totalScore: s.totalScore })) || []
+      }))
+    })
+    
     if (groupsApiData?.groups) {
       for (const group of groupsApiData.groups) {
+        console.log(`[${timestamp}] 检查班级 ${group.name}，学生数: ${group.students?.length || 0}`)
         const student = group.students?.find((s: any) => s.name === '金富欣')
         if (student) {
+          console.log(`[${timestamp}] 在班级 ${group.name} 中找到金富欣:`, student)
           groupsApiJinFuxin = student
           break
         }
