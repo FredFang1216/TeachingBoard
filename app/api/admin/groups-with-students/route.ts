@@ -12,6 +12,11 @@ export async function GET(request: NextRequest) {
     await prisma.$connect()
     console.log(`[${timestamp}] Prisma客户端已连接`)
     
+    // 强制断开并重新连接，确保获取最新数据
+    await prisma.$disconnect()
+    await prisma.$connect()
+    console.log(`[${timestamp}] Prisma客户端重新连接完成`)
+    
     // 先直接查询金富欣的当前状态
     const jinFuxinData = await prisma.student.findFirst({
       where: { name: '金富欣' },
@@ -79,6 +84,12 @@ export async function GET(request: NextRequest) {
       groups: formattedGroups,
       timestamp: timestamp,
       jinFuxinDirect: jinFuxinData
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
   } catch (error) {
     console.error('Get groups with students error:', error)

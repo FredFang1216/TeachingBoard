@@ -33,7 +33,8 @@ export default function DebugAdminPage() {
     
     try {
       const timestamp = Date.now()
-      const response = await fetch(`/api/admin/groups-with-students?t=${timestamp}`)
+      addLog(`请求时间戳: ${timestamp}`)
+      const response = await fetch(`/api/admin/groups-with-students?t=${timestamp}&force=${Math.random()}`)
       
       if (response.ok) {
         const data = await response.json()
