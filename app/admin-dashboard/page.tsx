@@ -88,6 +88,7 @@ export default function AdminDashboardPage() {
   const refreshData = async () => {
     if (refreshing) return // 防止重复刷新
     
+    console.log('开始刷新数据...')
     setRefreshing(true)
     try {
       // 添加时间戳防止缓存
@@ -97,6 +98,8 @@ export default function AdminDashboardPage() {
       const groupsResponse = await fetch(`/api/admin/groups-with-students?t=${timestamp}`)
       if (groupsResponse.ok) {
         const groupsData = await groupsResponse.json()
+        console.log('API响应数据:', groupsData)
+        
         setAllGroups(groupsData.groups || [])
         
         // 展平所有学生数据，添加班级和教师信息
@@ -110,6 +113,9 @@ export default function AdminDashboardPage() {
             })
           })
         })
+        
+        console.log('处理后的学生数据:', students.map(s => ({ id: s.id, name: s.name, totalScore: s.totalScore })))
+        
         setAllStudents(students)
         setLastRefresh(new Date())
         
@@ -122,7 +128,14 @@ export default function AdminDashboardPage() {
         })))
         setLastDataHash(dataHash)
         
+        console.log('数据刷新完成，学生总数:', students.length)
+        
+        // 强制触发重新渲染
+        setAllStudents([...students])
+        
         toast.success('数据已刷新')
+      } else {
+        console.error('API请求失败:', groupsResponse.status)
       }
     } catch (error) {
       console.error('刷新数据失败:', error)
@@ -323,6 +336,8 @@ export default function AdminDashboardPage() {
 
   const handleUpdateScore = async (studentId: string, points: number, reason: string) => {
     try {
+      console.log('开始加分操作:', { studentId, points, reason })
+      
       const response = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -330,15 +345,30 @@ export default function AdminDashboardPage() {
       })
 
       if (response.ok) {
+        const result = await response.json()
+        console.log('加分成功:', result)
         toast.success(`已加分 ${points} 分`)
         
+        // 立即更新本地状态
+        setAllStudents(prevStudents => 
+          prevStudents.map(student => 
+            student.id === studentId 
+              ? { ...student, totalScore: student.totalScore + points }
+              : student
+          )
+        )
+        
         // 立即刷新数据
+        console.log('开始刷新数据...')
         await refreshData()
+        console.log('数据刷新完成')
       } else {
         const errorData = await response.json()
+        console.error('加分失败:', errorData)
         toast.error(errorData.message || '积分更新失败')
       }
     } catch (error) {
+      console.error('加分网络错误:', error)
       toast.error('网络错误，请重试')
     }
   }
