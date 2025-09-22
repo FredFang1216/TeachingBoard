@@ -9,8 +9,10 @@ import {
   Users, 
   Settings, 
   LogOut,
-  Heart
+  Heart,
+  Shield
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface NavigationProps {
   onLogout?: () => void
@@ -18,12 +20,25 @@ interface NavigationProps {
 
 export default function Navigation({ onLogout }: NavigationProps) {
   const pathname = usePathname()
+  const [currentUser, setCurrentUser] = useState<any>(null)
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      setCurrentUser(JSON.parse(userData))
+    }
+  }, [])
 
   const navItems = [
     { href: '/dashboard', label: '学生管理', icon: Users },
     { href: '/analytics', label: '数据分析', icon: BarChart3 },
     { href: '/settings', label: '设置', icon: Settings },
   ]
+
+  // 如果是管理员，添加管理页面
+  if (currentUser?.role === 'ADMIN') {
+    navItems.push({ href: '/admin', label: '管理控制台', icon: Shield })
+  }
 
   return (
     <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
