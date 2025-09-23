@@ -460,122 +460,6 @@ export default function AdminDashboardPage() {
                     '手动刷新'
                   )}
                 </button>
-                <button
-                  onClick={() => {
-                    console.log('强制刷新触发')
-                    setLastDataHash('') // 清空哈希值，强制检测变化
-                    refreshData()
-                  }}
-                  disabled={refreshing}
-                  className={`px-3 py-2 rounded-lg transition-colors text-sm ${
-                    refreshing 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-red-500 hover:bg-red-600'
-                  } text-white`}
-                >
-                  强制刷新
-                </button>
-                <button
-                  onClick={() => {
-                    console.log('强制同步服务器数据...')
-                    setLastScoreUpdate(0) // 重置加分时间，强制同步
-                    refreshData()
-                  }}
-                  disabled={refreshing}
-                  className={`px-3 py-2 rounded-lg transition-colors text-sm ${
-                    refreshing 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-purple-500 hover:bg-purple-600'
-                  } text-white`}
-                >
-                  强制同步
-                </button>
-                <button
-                  onClick={async () => {
-                    console.log('测试数据同步...')
-                    try {
-                      const response = await fetch('/api/test-sync')
-                      if (response.ok) {
-                        const data = await response.json()
-                        console.log('测试同步结果:', data)
-                        alert(`测试同步完成！\n时间戳: ${data.timestamp}\n学生数: ${data.students.length}\n金富欣分数: ${data.jinFuxin?.totalScore || '未找到'}`)
-                      }
-                    } catch (error) {
-                      console.error('测试同步失败:', error)
-                      alert('测试同步失败')
-                    }
-                  }}
-                  className="px-3 py-2 rounded-lg transition-colors text-sm bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  测试同步
-                </button>
-                <button
-                  onClick={async () => {
-                    console.log('测试跨账户同步...')
-                    try {
-                      const response = await fetch('/api/test-cross-sync')
-                      if (response.ok) {
-                        const data = await response.json()
-                        console.log('跨账户同步结果:', data)
-                        const jinFuxin = data.jinFuxin
-                        if (jinFuxin) {
-                          const recentRecords = jinFuxin.scoreRecords.slice(0, 3)
-                          const recordsText = recentRecords.map((r: any) => 
-                            `${r.points > 0 ? '+' : ''}${r.points}分 (${r.reason}) - ${new Date(r.createdAt).toLocaleTimeString()}`
-                          ).join('\n')
-                          
-                          alert(`跨账户同步测试完成！\n\n金富欣信息:\n分数: ${jinFuxin.totalScore}\n班级: ${jinFuxin.group?.name}\n教师: ${jinFuxin.group?.teacher?.name}\n更新时间: ${new Date(jinFuxin.updatedAt).toLocaleString()}\n\n最近加分记录:\n${recordsText}`)
-                        } else {
-                          alert('未找到金富欣学生信息')
-                        }
-                      }
-                    } catch (error) {
-                      console.error('跨账户同步测试失败:', error)
-                      alert('跨账户同步测试失败')
-                    }
-                  }}
-                  className="px-3 py-2 rounded-lg transition-colors text-sm bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  跨账户测试
-                </button>
-                <button
-                  onClick={async () => {
-                    console.log('测试数据库同步...')
-                    try {
-                      const response = await fetch('/api/test-db-sync')
-                      if (response.ok) {
-                        const data = await response.json()
-                        console.log('数据库同步结果:', data)
-                        alert(`数据库同步测试完成！\n\n加分前: ${data.before?.totalScore}分\n加分后: ${data.after?.totalScore}分\n同步状态: ${data.isSynced ? '正常' : '异常'}\n\n${data.message}`)
-                      }
-                    } catch (error) {
-                      console.error('数据库同步测试失败:', error)
-                      alert('数据库同步测试失败')
-                    }
-                  }}
-                  className="px-3 py-2 rounded-lg transition-colors text-sm bg-pink-500 hover:bg-pink-600 text-white"
-                >
-                  数据库测试
-                </button>
-                <button
-                  onClick={async () => {
-                    console.log('对比API数据...')
-                    try {
-                      const response = await fetch('/api/compare-apis')
-                      if (response.ok) {
-                        const data = await response.json()
-                        console.log('API对比结果:', data)
-                        alert(`API对比测试完成！\n\n直接查询: ${data.directQuery?.totalScore}分\nGroups API: ${data.groupsApiJinFuxin?.totalScore}分\n数据一致性: ${data.isDataConsistent ? '一致' : '不一致'}\n\n时间差: ${data.timeDiff ? data.timeDiff + 'ms' : '未知'}\n\n${data.message}`)
-                      }
-                    } catch (error) {
-                      console.error('API对比测试失败:', error)
-                      alert('API对比测试失败')
-                    }
-                  }}
-                  className="px-3 py-2 rounded-lg transition-colors text-sm bg-indigo-500 hover:bg-indigo-600 text-white"
-                >
-                  API对比
-                </button>
               </div>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>
@@ -583,9 +467,7 @@ export default function AdminDashboardPage() {
                   {refreshing ? '同步中...' : '实时同步'} • 最后更新: {lastRefresh.toLocaleTimeString()}
                 </p>
               </div>
-              <div className="text-xs text-gray-400 mt-1">
-                学生总数: {allStudents.length} • 数据哈希: {lastDataHash.substring(0, 20)}...
-              </div>
+              
             </div>
           </div>
         </div>
