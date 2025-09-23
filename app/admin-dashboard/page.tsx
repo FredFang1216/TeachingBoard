@@ -797,6 +797,29 @@ export default function AdminDashboardPage() {
                           大胆尝试 +1
                         </button>
                         <button
+                          onClick={async () => {
+                            if (!confirm(`确认删除学生 ${student.name} 吗？该操作不可恢复。`)) return
+                            try {
+                              const res = await fetch(`/api/admin/students/${student.id}`, { method: 'DELETE', headers: { 'Cache-Control': 'no-store' } })
+                              if (res.ok) {
+                                toast.success('学生已删除')
+                                // 立即从前端移除，保证快速反馈
+                                setAllStudents(prev => prev.filter(s => s.id !== student.id))
+                                // 同步刷新，确保后台一致
+                                await refreshData()
+                              } else {
+                                const err = await res.json()
+                                toast.error(err.message || '删除失败')
+                              }
+                            } catch (e) {
+                              toast.error('网络错误，删除失败')
+                            }
+                          }}
+                          className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+                        >
+                          删除
+                        </button>
+                        <button
                           onClick={() => {
                             const points = prompt('请输入要增加的积分:')
                             const reason = prompt('请输入加分原因:')
